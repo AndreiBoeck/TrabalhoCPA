@@ -1,0 +1,2 @@
+estacao_codigo,estacao_nome,inicio_solicitado,fim_solicitado,linhas_xml,arquivo_bruto,coletado_ou_cache_em,url,licenca
+87450020,"Usina do Gasômetro, referencial corrigido",2024-05-03,2024-06-30,5551,ana_87450020_2024-05-03_2024-06-30.xml,2026-10-26T20:35:49,https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos,"Consultar termos da ANA; fonte pública oficial, crédito obrigatório"

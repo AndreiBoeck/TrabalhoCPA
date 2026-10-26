@@ -1,0 +1,42 @@
+bairro,nivel_m,campo,valor_original,valor_corrigido,problema,tratamento
+Arquipélago,3.0,affected_buildings,4685,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,3.5,affected_buildings,4685,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,4.0,affected_buildings,4685,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,4.1,affected_buildings,4674,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,4.5,affected_buildings,4685,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,5.0,affected_buildings,4685,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Arquipélago,5.3,affected_buildings,4688,4680,Oscilação isolada em série quase constante; nível maior reduz o total atingido,Substituir pela moda observada em 64 dos 71 níveis
+Boa Vista do Sul,7.2,affected_population,784,757,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Boa Vista do Sul,7.2,percentage,29,28,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Boa Vista do Sul,7.3,affected_population,784,757,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Boa Vista do Sul,7.3,percentage,29,28,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Centro Histórico,9.7,affected_buildings,0,2077,Zero entre níveis com prédios atingidos positivos,Interpolação linear entre 9.6 e 9.9 m
+Centro Histórico,9.7,affected_population,0,14979,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Centro Histórico,9.7,percentage,0,49,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Centro Histórico,9.8,affected_buildings,0,2103,Zero entre níveis com prédios atingidos positivos,Interpolação linear entre 9.6 e 9.9 m
+Centro Histórico,9.8,affected_population,0,14979,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Centro Histórico,9.8,percentage,0,49,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.0,affected_buildings,637,25,"Patamar inicial 633–637 cai abruptamente para 25 em 3,5 m","Imputação pelo primeiro valor plausível (3,5 m); estimativa incerta"
+Espírito Santo,3.0,affected_population,991,50,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.0,percentage,20,1,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.1,affected_buildings,637,25,"Patamar inicial 633–637 cai abruptamente para 25 em 3,5 m","Imputação pelo primeiro valor plausível (3,5 m); estimativa incerta"
+Espírito Santo,3.1,affected_population,991,50,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.1,percentage,20,1,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.2,affected_buildings,637,25,"Patamar inicial 633–637 cai abruptamente para 25 em 3,5 m","Imputação pelo primeiro valor plausível (3,5 m); estimativa incerta"
+Espírito Santo,3.2,affected_population,991,50,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.2,percentage,20,1,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.3,affected_buildings,637,25,"Patamar inicial 633–637 cai abruptamente para 25 em 3,5 m","Imputação pelo primeiro valor plausível (3,5 m); estimativa incerta"
+Espírito Santo,3.3,affected_population,991,50,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.3,percentage,20,1,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.4,affected_buildings,633,25,"Patamar inicial 633–637 cai abruptamente para 25 em 3,5 m","Imputação pelo primeiro valor plausível (3,5 m); estimativa incerta"
+Espírito Santo,3.4,affected_population,942,50,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,3.4,percentage,19,1,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,4.7,affected_buildings,2101,47,Pico isolado de 2101 entre 46 e 47 prédios,"Interpolação linear entre 4,6 e 4,8 m, arredondada"
+Espírito Santo,4.7,affected_population,3121,100,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Espírito Santo,4.7,percentage,63,2,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Lageado,8.1,affected_buildings,0,109,Zero entre níveis com prédios atingidos positivos,Interpolação linear entre 8.0 e 8.2 m
+Lageado,8.1,affected_population,0,171,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Lageado,8.1,percentage,0,3,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Rubem Berta,8.8,affected_buildings,0,269,Zero entre níveis com prédios atingidos positivos,Interpolação linear entre 8.7 e 8.9 m
+Rubem Berta,8.8,affected_population,0,1397,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
+Rubem Berta,8.8,percentage,0,5,Campo derivado incompatível com a contagem corrigida,Recalcular com arredondamento para cima usado pela fonte
