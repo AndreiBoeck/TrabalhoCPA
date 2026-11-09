@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Tela 1: simulação de impacto por nível do Guaíba com a base limpa do INCT SiMAI." />
+  <title>Simulação do INCT | TrabalhoCPA</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">≈</span><div><strong>TrabalhoCPA</strong><small>Projeto Extensionista · Tela 1</small></div></div>
+      <span class="source-badge">Dados: INCT SiMAI</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div><p class="eyebrow">SIMULAÇÃO DO INCT</p><h1 id="page-title">Se o Guaíba atingir <span id="title-level">5,3 m</span>...</h1><p>Veja quantas pessoas e edificações seriam afetadas em Porto Alegre e quais bairros concentram o impacto estimado.</p></div>
+        <span class="scenario-tag">Cenários de 3,0 a 10,0 m</span>
+      </section>
+
+      <section class="level-panel" aria-labelledby="level-title"><div class="level-heading"><div><p class="eyebrow">ESCOLHA O CENÁRIO</p><h2 id="level-title">Nível do Guaíba</h2></div><output id="level-output" for="level-range">5,3 m</output></div><input id="level-range" type="range" min="3" max="10" step="0.1" value="5.3" aria-label="Nível do Guaíba, de 3 a 10 metros em passos de 0,1 metro" /><div class="range-labels"><span>3,0 m</span><span>5,35 m <i>recorde de maio/2024</i></span><span>10,0 m</span></div><p class="level-note">O recorde de 5,35 m fica entre os cenários disponíveis de 5,3 m e 5,4 m; não há interpolação dos impactos.</p></section>
+
+      <section class="metrics" aria-label="Indicadores do nível escolhido"><article class="metric"><span class="metric-icon people" aria-hidden="true">●</span><div><p>Pessoas afetadas</p><strong id="affected-population">—</strong><small>estimativa para toda a cidade</small></div></article><article class="metric"><span class="metric-icon buildings" aria-hidden="true">▦</span><div><p>Prédios afetados</p><strong id="affected-buildings">—</strong><small>edificações na simulação</small></div></article><article class="metric"><span class="metric-icon areas" aria-hidden="true">◇</span><div><p>Bairros atingidos</p><strong id="affected-neighborhoods">—</strong><small>de 94 bairros analisados</small></div></article></section>
+
+      <div class="dashboard-grid">
+        <section class="panel percent-panel" aria-labelledby="percent-title"><div class="panel-heading"><div><p class="eyebrow">DISTRIBUIÇÃO DO IMPACTO</p><h2 id="percent-title">Prédios afetados por bairro</h2><p>Porcentagem das edificações de cada bairro no nível selecionado</p></div><span id="bar-count" class="count-badge">— bairros</span></div><div id="bars" class="bars" role="list" aria-label="Porcentagem de prédios afetados em cada bairro atingido"></div><p class="chart-footnote">Percentual calculado com a contagem de prédios; o campo percentual da fonte é arredondado para cima.</p></section>
+        <div class="side-grid"><section class="panel curve-panel" aria-labelledby="curve-title"><div class="panel-heading"><div><p class="eyebrow">TODOS OS NÍVEIS</p><h2 id="curve-title">População afetada</h2><p>Estimativa para toda Porto Alegre por nível do Guaíba</p></div></div><div class="curve-wrap"><svg id="curve" viewBox="0 0 600 250" role="img" aria-label="Curva da população afetada em toda a cidade entre 3 e 10 metros"></svg></div><div class="curve-legend"><span><i class="line-key"></i>Simulação INCT</span><span><i class="record-key"></i>Recorde: 5,35 m</span><span><i class="point-key"></i>Nível escolhido</span></div></section>
+          <section class="panel ranking-panel" aria-labelledby="ranking-title"><div class="panel-heading"><div><p class="eyebrow">NO NÍVEL ESCOLHIDO</p><h2 id="ranking-title">Bairros mais afetados</h2><p>Ranking pela população afetada estimada</p></div></div><ol id="ranking" class="ranking"></ol></section></div>
+      </div>
+      <footer class="footer">Fonte única desta tela: JSON fornecido pelo INCT SiMAI, após a limpeza documentada no projeto. <a href="/docs" target="_blank" rel="noopener noreferrer">Consultar API</a></footer>
+    </main>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+</body>
+</html>

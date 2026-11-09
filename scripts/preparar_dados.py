@@ -144,6 +144,7 @@ def clean_inct() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if (df.percentage != (100 * df.affected_buildings / df.total_buildings).apply(math.ceil)).any():
         raise AssertionError("Percentuais inconsistentes")
     df.to_csv(PROCESSED / "inct_simai_limpo.csv", index=False)
+    df.to_json(PROCESSED / "inct_simai_limpo.json", orient="records", force_ascii=False, indent=2)
     changes.to_csv(PROCESSED / "auditoria_inct.csv", index=False)
     summary = df.groupby("nivel_m", as_index=False).agg(
         pessoas_afetadas=("affected_population", "sum"),

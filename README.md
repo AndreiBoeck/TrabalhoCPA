@@ -20,7 +20,18 @@ final é entregue ao parceiro e pode ser usado por ele.
 
 ## Estado atual
 
-As fases de levantamento, limpeza e análise exploratória inicial estão salvas neste repositório. O dashboard ainda será construído. Os nomes dos integrantes, a avaliação manual da ferramenta atual e o link público do dashboard devem ser acrescentados pela equipe.
+As fases de levantamento, limpeza e análise exploratória inicial estão salvas neste repositório. A primeira versão local da Tela 1 está em `backend/` e `frontend/`. Ela inclui controle deslizante de 3,0 a 10,0 m em passos de 0,1 m, três indicadores, gráfico da porcentagem de prédios afetados por bairro, curva da população afetada com a marca de 5,35 m e ranking. O alerta em destaque sobre as limitações foi retirado da interface a pedido da equipe. Os nomes dos integrantes, a avaliação manual da ferramenta atual e o link público do dashboard devem ser acrescentados pela equipe.
+
+## Executar a aplicação
+
+Na raiz do repositório, use Python 3.9 ou mais recente:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m uvicorn backend.main:app --reload
+```
+
+Abra [http://127.0.0.1:8000](http://127.0.0.1:8000). O backend lê `dados/processados/inct_simai_limpo.json`, gerado exclusivamente a partir do JSON do INCT pelo script de limpeza, e expõe os dados em `/api/metadata`, `/api/scenario` e `/api/curve`. O frontend está em `frontend/` e é servido pelo mesmo processo. A Tela 1 não usa os dados da ANA nem outra fonte externa. O mapa é opcional no enunciado e não integra esta versão.
 
 ## Como reproduzir
 
@@ -38,6 +49,7 @@ Abra os notebooks na ordem `01_limpeza_inct.ipynb`, `02_coleta_limpeza_ana.ipynb
 
 - `dados/originais/`: JSON do INCT, XML bruto da ANA e metadados da coleta.
 - `dados/processados/inct_simai_limpo.csv`: uma linha por nível e bairro, com os dados corrigidos.
+- `dados/processados/inct_simai_limpo.json`: mesma base limpa, consumida pela Tela 1.
 - `dados/processados/auditoria_inct.csv`: valores originais, corrigidos e justificativas.
 - `dados/processados/inct_resumo_por_nivel.csv`: indicadores da Tela 1.
 - `dados/processados/ana_guaiba_2024_limpo.csv`: série observada da estação 87450020, com lacunas preservadas.
@@ -45,6 +57,9 @@ Abra os notebooks na ordem `01_limpeza_inct.ipynb`, `02_coleta_limpeza_ana.ipynb
 - `resultados/figuras/`: oito gráficos da EDA.
 - `relatorios/base_dados.pdf` e `relatorios/limpeza_dados.pdf`: entregas das fases 1 e 2.
 - `relatorios/wireframe.md`: esboço das duas telas.
+- `relatorios/checklist_tela2.md`: requisitos, extras e critérios de conclusão da Tela 2.
+- `backend/`: API da Tela 1.
+- `frontend/`: interface local da Tela 1, focada no INCT.
 
 ## Fontes e limites
 
