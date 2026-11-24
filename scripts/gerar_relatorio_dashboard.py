@@ -11,6 +11,7 @@ de gerar a versão de entrega.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -137,6 +138,10 @@ def page_frame(canvas, doc):
     canvas.restoreState()
 
 
+def fmt_pct(value: float) -> str:
+    return f"{value * 100:.0f}%"
+
+
 def numbers() -> dict:
     resumo = pd.read_csv(ROOT / "dados/processados/inct_resumo_por_nivel.csv").set_index("nivel_m")
     ana = pd.read_csv(ROOT / "dados/processados/ana_guaiba_2024_limpo.csv")
@@ -150,6 +155,9 @@ def numbers() -> dict:
 def build() -> None:
     n = numbers()
     r3, r53, r54, r10 = n["r3"], n["r53"], n["r54"], n["r10"]
+    validation = json.loads((ROOT / "dados/processados/modelo_agua_validacao.json").read_text(encoding="utf-8"))
+    v = {row["date"]: row for row in validation["validation"]}
+    fc72 = json.loads((ROOT / "dados/processados/modelo_previsao.json").read_text(encoding="utf-8"))["horizons"][-1]
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     doc = BaseDocTemplate(str(OUTPUT), pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
                           topMargin=20 * mm, bottomMargin=23 * mm,
@@ -219,76 +227,102 @@ def build() -> None:
         p("Como usar", "h2"),
         bullet("Arraste o controle ou use as setas do teclado para mudar o nível em passos de 0,1 m; o título, os "
                "indicadores, as barras, o ponto na curva e o ranking são atualizados juntos."),
-        bullet("Use o link <b>Tela 2</b> no canto superior direito para ir às bases externas."),
+        bullet("Use o link <b>Tela 2 · Tempo real</b> no canto superior direito para ir à Tela 2."),
         bullet("O link <b>Consultar API</b> no rodapé abre a documentação dos dados servidos pela tela."),
 
         figure("tela1_visao_geral.png", "Figura 1. Tela 1 no nível de 5,3 m, o cenário disponível mais próximo do "
                "recorde de maio de 2024.", max_height_mm=175),
-        p("3. Tela 2: o Guaíba em 2024 e bases externas", "h1"),
-        p("<b>Objetivo.</b> Acrescentar à simulação o que foi efetivamente medido e mapeado na enchente de 2024: "
-          "o nível observado do Guaíba, a localização dos bairros, a mancha de água modelada por satélite e o "
-          "efeito dessa mancha no deslocamento a pé pelo centro."),
+        p("3. Tela 2: o Guaíba agora e o que ele alaga", "h1"),
+        p("<b>Objetivo.</b> Responder, a qualquer momento, quanto o Guaíba está marcando, para onde ele deve ir nas "
+          "próximas 72 horas e onde a água chega nesse nível: em cada bairro (simulação do INCT), em um ponto "
+          "escolhido da cidade e nas ruas do centro. A enchente de 2024 serve de referência e de validação."),
+        box("<b>Um único cenário para a tela inteira.</b> Ao abrir, a tela fica <b>sincronizada com o tempo real</b>: "
+            "o nível em uso é a leitura mais recente da ANA (consultada a cada 5 minutos). Ao escolher outro nível, um "
+            "horário da previsão ou o recorde de 2024, a tela passa para <b>cenário manual</b> e todos os mapas, "
+            "indicadores e gráficos mudam juntos. O botão <b>Voltar ao tempo real</b> retoma a leitura atual. "
+            "Os níveis usam a régua do Cais Mauá, a mesma escala da Tela 1: régua = referencial corrigido da ANA + "
+            "1,18 m, diferença documentada pela ANA/SGB para o pico de 05/05/2024 (5,35 m ↔ 4,17 m)."),
+        Spacer(1, 6),
+        figure("t2_1_topo.png", "Figura 2. Topo da Tela 2: leitura atual, cenário em uso, indicadores e o componente "
+               "de mapas em abas (aba Bairros).", max_height_mm=135),
         p("Bases externas, obtidas por código", "h2"),
         table([
             ["Base", "Como foi obtida", "Uso na tela", "Coleta"],
             ["ANA/SGB, estação 87450020 (Usina do Gasômetro)",
-             f"WebService da ANA (<b>scripts/preparar_dados.py</b>); XML bruto guardado. {fmt(n['ana_total'])} "
-             f"horários, {fmt(n['ana_validos'])} com nível.",
-             "Série 03/05–30/06/2024, faixa diária, completude, leitura recente", "26/10/2026"],
+             "WebService da ANA: leitura ao vivo (<b>backend/main.py</b>), série desde 2023 "
+             "(<b>scripts/preparar_previsao.py</b>) e maio–junho de 2024 (<b>scripts/preparar_dados.py</b>).",
+             "Leitura atual, previsão, gráficos de 2024 e calibração do modelo de água",
+             "a cada 5 min; histórico em 24/11/2026"],
             ["Limites oficiais dos bairros (Prefeitura/ObservaPOA)",
-             "Download automatizado (<b>scripts/preparar_bairros.py</b>)", "Mapa temático por bairro",
-             "10/11/2026"],
-            ["Copernicus EMSN194", "Download automatizado (<b>scripts/preparar_rotas_2024.py</b>)",
-             "Mancha e profundidade de 06/05/2024 (rotas e 3D)", "10/11/2026"],
-            ["OpenStreetMap", "API do OSM (<b>scripts/preparar_rotas_2024.py</b>)", "Rede de ruas do centro",
-             "10/11/2026"],
-            ["Mapzen Terrain Tiles (AWS Open Data)", "Download automatizado (<b>scripts/preparar_relevo_3d.py</b>)",
-             "Relevo da visualização 3D", "10/11/2026"],
-        ], [42, 56, 52, 24]),
+             "Download automatizado (<b>scripts/preparar_bairros.py</b>)", "Aba Bairros", "10/11/2026"],
+            ["Copernicus EMSN194", "Download automatizado (<b>scripts/preparar_modelo_agua.py</b>)",
+             "Profundidade e manchas de 04 a 10/05/2024: calibração e validação do modelo de água", "24/11/2026"],
+            ["Terrain Tiles (AWS Open Data)", "Download automatizado (<b>scripts/preparar_modelo_agua.py</b>)",
+             "Relevo do modelo de água", "24/11/2026"],
+            ["OpenStreetMap", "API do OSM (<b>scripts/preparar_rotas_2024.py</b>) e blocos do mapa",
+             "Rede de ruas das rotas e mapa sobre o relevo 3D", "10/11/2026 e ao vivo"],
+        ], [40, 58, 50, 26]),
         Spacer(1, 4),
-        p("Cada visualização exibe, logo abaixo, a fonte com link e a data de coleta, como pede o enunciado.",
-          "small"),
-        figure("tela2_ana.png", "Figura 2. Medições da ANA com filtro de período, indicadores, os três gráficos e o "
-               "painel que liga a Tela 2 à Tela 1.", max_height_mm=125),
+        p("Cada visualização exibe a fonte com link e a data de coleta, como pede o enunciado.", "small"),
+        p("Modelo de água por nível", "h2"),
+        p("O JSON do INCT dá totais por bairro, mas não diz onde a água fica. Para a aba 3D e as rotas, montamos uma "
+          "grade de 20 m sobre Porto Alegre. O relevo aberto inclui prédios e vegetação, então o chão foi corrigido "
+          f"com a profundidade do Copernicus (chão = nível da ANA no dia − profundidade) e, fora das áreas molhadas, "
+          f"com um viés local estimado num raio de 1 km. A água entra a partir do lago: cada célula guarda a menor cota "
+          f"capaz de alcançá-la por células conectadas, supondo que o sistema de proteção deixe a água passar, como em "
+          f"2024. Validação contra a mancha observada, dentro de Porto Alegre: IoU de {fmt_pct(v['2024-05-06']['iou'])} "
+          f"em 06/05 (data usada na calibração), {fmt_pct(v['2024-05-04']['iou'])} em 04/05 e "
+          f"{fmt_pct(v['2024-05-10']['iou'])} em 10/05/2024. A precisão fica acima de 98% (onde o modelo põe água, "
+          "havia água), mas ele subestima a área porque não representa a água represada atrás dos diques quando o rio "
+          "baixou."),
+        figure("t2_2_3d.png", "Figura 3. Aba Água no ponto · 3D: 1,2 km × 1,2 km em volta da Rodoviária, com o "
+               "mapa do OpenStreetMap sobre o relevo e a água no cenário de 5,35 m.", max_height_mm=110),
+        figure("t2_3_rotas.png", "Figura 4. Aba Rotas a pé: trechos com água no centro no cenário de 5,35 m.",
+               max_height_mm=105),
+        p("Previsão do nível", "h2"),
+        p(f"Para cada horizonte de 6 a 72 h, uma regressão linear prevê a variação do nível a partir da tendência "
+          f"das últimas 6, 24 e 72 h e da distância à média de 30 dias. O treino usa a série horária da estação desde "
+          f"2023, e o teste usa os 12 meses mais recentes, que o modelo não viu: erro médio em 72 h de "
+          f"{fc72['mae_model_m'] * 100:.0f} cm, contra {fc72['mae_persistence_m'] * 100:.0f} cm de repetir o último "
+          "nível. A faixa mostrada cobre 80% dos erros do teste. É um modelo estatístico experimental: não usa chuva "
+          "prevista, vento nem vazão dos rios e não substitui os boletins do SGB, cuja série pública estruturada não "
+          "foi encontrada."),
+        figure("t2_4_previsao.png", "Figura 5. Últimos 7 dias e previsão de 72 h com faixa provável. Clicar em um "
+               "ponto da previsão aplica aquele horário em toda a tela.", max_height_mm=80),
+        figure("t2_5_2024.png", "Figura 6. Enchente de 2024: filtro de período, três gráficos da ANA com o cenário "
+               "em uso como linha de referência e o painel de ligação com a Tela 1.", max_height_mm=125),
         p("Visualizações escolhidas e por quê", "h2"),
         table([
             ["Elemento", "Por que esta forma"],
-            ["Filtro de período (datas De/Até)",
-             "Filtro interativo que atualiza os indicadores e os três gráficos da ANA juntos."],
-            ["Série temporal do nível observado",
-             "Mostra a subida até o pico de 4,17 m em 05/05/2024 e a descida lenta. Lacunas ficam vazias, "
-             "nunca desenhadas como zero."],
-            ["Faixa diária (mínimo–máximo)",
-             "Resume quase 100 leituras por dia em uma barra, deixando visível a oscilação diária."],
-            ["Completude diária",
-             "Mostra quanto de cada dia tem medição, para que o leitor saiba quando a série é menos confiável."],
-            ["Cartões de leitura recente e de recorde",
-             "A leitura atual só aparece como recente se tiver até 2 h; o recorde aparece nos dois referenciais "
-             "(5,35 m na régua emergencial e 4,17 m no referencial corrigido), sem misturá-los no mesmo eixo."],
+            ["Leitura atual e selo Tempo real / Cenário manual",
+             "Deixa claro, o tempo todo, se o que a tela mostra é o agora ou uma hipótese. Leitura com mais de 2 h é "
+             "marcada como desatualizada."],
+            ["Controle do cenário e botões de previsão e recorde",
+             "Um só controle muda tudo: evita que cada gráfico mostre um nível diferente."],
+            ["Indicadores do cenário",
+             "Pessoas e bairros (INCT), ruas com água no centro e água no ponto escolhido, numa leitura só."],
+            ["Mapas em abas (Bairros, 3D, Rotas)",
+             "Três escalas da mesma pergunta (bairro, quarteirão, rua) no destaque da tela, sem rolar a página."],
+            ["Vista 3D com mapa real",
+             "Mostrar o mapa da rua sob a água torna a profundidade compreensível para moradores e imprensa."],
+            ["Gráfico de previsão com faixa",
+             "Linha contínua para o observado, tracejada para a previsão e faixa para a incerteza: o leitor vê o "
+             "quanto confiar no número."],
+            ["Série, faixa diária e completude de 2024 com filtro",
+             "Mostram a subida até o pico e onde faltam medições; lacunas nunca aparecem como zero."],
             ["Ligação com a Tela 1",
-             "Painel lado a lado com o pico observado (ANA) e o impacto dos cenários INCT de 5,3 e 5,4 m, "
-             "identificados como observação e simulação. Os referenciais não foram equiparados, então não há "
-             "comparação numérica direta."],
-            ["Mapa temático por bairro",
-             "Colore os 94 limites oficiais pela % de prédios afetados no nível escolhido, com controle próprio. "
-             "É o mapa opcional do enunciado; a cor resume o bairro e não localiza a água dentro dele."],
-            ["Relevo e água em 3D",
-             "Visualização exploratória de duas regiões do centro com a profundidade modelada de 06/05/2024; "
-             "permite girar, exagerar o relevo e ocultar a água."],
-            ["Rotas entre dois pontos",
-             "Protótipo: o usuário marca A e B; o servidor calcula o caminho seco mais curto ou, se A estiver "
-             "alagado, a saída de menor profundidade, e compara com o caminho sem alagamento."],
+             "Cenário em uso, impacto estimado pelo INCT e recorde de 2024 no mesmo eixo da régua."],
         ], [52, 122]),
-        figure("tela2_mapa_3d.png", "Figura 3. Mapa temático por bairro (simulação INCT sobre limites oficiais) e "
-               "relevo 3D com a água modelada em 06/05/2024.", max_height_mm=115),
-        figure("tela2_rotas.png", "Figura 4. Protótipo de rotas no centro de Porto Alegre, cenário de 06/05/2024.",
-               max_height_mm=100),
         p("Como usar", "h2"),
-        bullet("Escolha as datas <b>De</b> e <b>Até</b> para recortar o período da série da ANA."),
-        bullet("No mapa temático, mova o controle de nível e toque em um bairro para ver seus valores."),
-        bullet("No 3D, escolha a região e ajuste rotação, exagero vertical e a camada de água."),
-        bullet("Nas rotas, clique numa rua para marcar A e depois B, ou use <b>Exemplo de desvio</b> e "
-               "<b>Origem alagada</b>; <b>Escolher outros pontos</b> recomeça."),
+        bullet("Sem fazer nada, a tela mostra o nível de agora. Use o controle, os botões <b>Previsão +24/48/72 h</b>, "
+               "<b>Recorde 2024</b> ou um ponto do gráfico de previsão para mudar o cenário; <b>Voltar ao tempo "
+               "real</b> retoma a leitura atual."),
+        bullet("Na aba <b>Bairros</b>, clique em um bairro para ver os valores; o ponto do 3D vai para lá."),
+        bullet("Na aba <b>Água no ponto · 3D</b>, clique no mini mapa para escolher outro ponto e arraste a vista "
+               "para girar."),
+        bullet("Na aba <b>Rotas a pé</b>, clique numa rua para marcar A e depois B, ou use os exemplos."),
+        bullet("Na seção de 2024, escolha as datas <b>De</b> e <b>Até</b>. O endereço "
+               "<b>/tela2#aba=point&amp;nivel=5.35</b> abre a tela já numa aba e num nível."),
 
         p("4. Limitações", "h1"),
         bullet("<b>Simulação, não contagem.</b> A população afetada supõe pessoas distribuídas igualmente entre todos "
@@ -296,27 +330,34 @@ def build() -> None:
         bullet("<b>Dados corrigidos.</b> O JSON do INCT tinha inconsistências; 17 contagens de prédios foram ajustadas "
                "e 24 campos recalculados. A correção do Espírito Santo de 3,0 a 3,4 m é a mais incerta."),
         bullet("<b>Percentual da fonte arredondado para cima.</b> O painel mantém essa regra para coerência com o INCT."),
-        bullet("<b>Referenciais diferentes.</b> O recorde de 5,35 m é da régua emergencial; a série da ANA usa o "
-               "referencial corrigido (4,17 m para o mesmo pico). O referencial dos níveis do INCT não foi confirmado."),
-        bullet("<b>Bairro como unidade.</b> O mapa temático não indica quais ruas ficam alagadas."),
-        bullet("<b>Rotas e 3D são históricos e exploratórios.</b> Usam um único cenário (06/05/2024), não consideram "
-               "correnteza, bloqueios ou condições atuais e não são indicação de segurança."),
-        bullet("<b>Sem previsão.</b> Não foi encontrada uma série oficial de níveis previstos acessível por código; "
-               "a tela informa isso em vez de extrapolar."),
+        bullet("<b>Referencial.</b> A conversão régua = ANA + 1,18 m vem do pico de 2024. Supomos que os níveis do "
+               "INCT estão na régua, o que não foi confirmado com o parceiro."),
+        bullet("<b>Modelo de água simplificado.</b> Enche a partir do lago, sem chuva local, bombas, correnteza ou "
+               "obras recentes, e supõe que a proteção deixe a água passar. Subestima a água represada. Não serve "
+               "para decisão de segurança."),
+        bullet("<b>Previsão experimental.</b> Ganho pequeno sobre repetir o último nível; não antecipa cheias "
+               "causadas por chuva ainda não registrada no nível."),
+        bullet("<b>Bairro como unidade no INCT.</b> A aba Bairros não indica quais ruas ficam alagadas; para isso "
+               "servem o 3D e as rotas, com o modelo próprio."),
 
         p("5. O que mudou desde a Fase 3", "h1"),
         p("Na Fase 3, o repositório tinha a Tela 1 funcional e a checklist da Tela 2. Para a versão final:"),
-        bullet("Tela 2 completa: série ANA com filtro de período, três gráficos, leitura recente e cartão de recorde."),
-        bullet("Painel de ligação com a Tela 1 pela enchente de 2024."),
-        bullet("Mapa temático dos 94 bairros com limites oficiais da Prefeitura (diferencial opcional do enunciado)."),
-        bullet("Visualização 3D histórica e protótipo de rotas, com 12 testes automatizados (rotas, API e dados espaciais)."),
-        bullet("Mockup que reúne as duas telas com navegação lateral (<b>/mockup</b>)."),
+        bullet("Tela 2 reorganizada em torno do tempo real: leitura atual, cenário único com sincronização e botão "
+               "<b>Voltar ao tempo real</b>."),
+        bullet("Os três mapas viraram um componente só, em abas, logo abaixo do nível atual."),
+        bullet("A vista 3D deixou de mostrar só 06/05/2024: agora mostra qualquer ponto da cidade, com mapa real, no "
+               "nível escolhido, usando o novo modelo de água calibrado e validado."),
+        bullet("As rotas passaram a usar o nível do cenário em vez de um único dia histórico."),
+        bullet("Previsão de 72 h com modelo próprio, validada em 12 meses fora do treino."),
+        bullet("Mapa temático dos 94 bairros com limites oficiais (diferencial opcional do enunciado)."),
+        bullet("18 testes automatizados (rotas, API, dados espaciais, modelo de água e previsão)."),
         bullet("Este relatório, gerado por <b>scripts/gerar_relatorio_dashboard.py</b>."),
 
         p("6. Uso de ferramentas de IA", "h1"),
         bullet("<b>Codex</b>, 26/10/2026: apoio na preparação de scripts, notebooks, limpeza, gráficos e relatórios "
                "iniciais (registrado no README)."),
-        bullet("<b>Claude Code</b>, 24/11/2026: organização dos commits finais, capturas de tela e redação deste "
+        bullet("<b>Claude Code</b>, 24/11/2026: organização dos commits finais; reorganização da Tela 2 (tempo real, "
+               "abas, 3D por ponto); modelo de água e previsão com suas validações; capturas de tela e redação deste "
                "relatório a partir do código e dos dados do repositório."),
         p("A equipe revisou o conteúdo e deve conseguir explicar cada parte do código na apresentação.", "small"),
 

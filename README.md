@@ -20,7 +20,12 @@ final é entregue ao parceiro e pode ser usado por ele.
 
 ## Estado atual
 
-As fases de levantamento, limpeza e análise exploratória inicial estão salvas neste repositório. A primeira versão local da Tela 1 está em `backend/` e `frontend/`. Ela inclui controle deslizante de 3,0 a 10,0 m em passos de 0,1 m, três indicadores, gráfico da porcentagem de prédios afetados por bairro, curva da população afetada com a marca de 5,35 m e ranking. A Tela 2 mostra a série ANA/SGB de 2024 com três gráficos e filtro de período, mapa temático por bairro, relevo 3D histórico exploratório e protótipo de rotas em um cenário histórico. O alerta em destaque sobre as limitações foi retirado da Tela 1 a pedido da equipe. Os nomes dos integrantes, a avaliação manual da ferramenta atual e o link público do dashboard devem ser acrescentados pela equipe.
+As fases de levantamento, limpeza e análise exploratória estão salvas neste repositório. As duas telas estão em `backend/` e `frontend/`.
+
+- **Tela 1** (`/`): controle deslizante de 3,0 a 10,0 m em passos de 0,1 m, três indicadores, porcentagem de prédios afetados por bairro, curva da população afetada com a marca de 5,35 m e ranking. Usa apenas o JSON limpo do INCT.
+- **Tela 2** (`/tela2`): acompanha o nível do Guaíba em tempo real e mostra o que ele alaga. Detalhes abaixo.
+
+Os nomes dos integrantes, a avaliação manual da ferramenta atual do INCT e o link público do dashboard devem ser acrescentados pela equipe. O aviso de limitações em destaque foi retirado da Tela 1 a pedido da equipe, mas é exigido pelo enunciado.
 
 ## Executar a aplicação
 
@@ -31,41 +36,43 @@ python3 -m pip install -r requirements.txt
 python3 -m uvicorn backend.main:app --reload
 ```
 
-Abra [http://127.0.0.1:8000](http://127.0.0.1:8000). O backend lê `dados/processados/inct_simai_limpo.json`, gerado exclusivamente a partir do JSON do INCT pelo script de limpeza, e expõe os dados em `/api/metadata`, `/api/scenario` e `/api/curve`. O frontend está em `frontend/` e é servido pelo mesmo processo. A Tela 1 não usa os dados da ANA nem outra fonte externa. O mapa é opcional no enunciado e não integra esta versão.
+Abra [http://127.0.0.1:8000](http://127.0.0.1:8000) (Tela 1) e [http://127.0.0.1:8000/tela2](http://127.0.0.1:8000/tela2) (Tela 2). A documentação da API fica em `/docs`. Execute `python3 -m unittest discover -s tests -v` para os testes.
 
-### Mockup das duas telas
+## Tela 2: o Guaíba agora e o que ele alaga
 
-Abra [http://127.0.0.1:8000/mockup](http://127.0.0.1:8000/mockup). O arquivo `frontend/mockup.html` reúne a Tela 1 original, sem alterações visuais, e uma nova apresentação da Tela 2. Use a navegação lateral para trocar de tela. Na Tela 2, as abas alternam entre impacto por bairro, rotas do cenário histórico e relevo 3D; o controle do nível e o filtro de datas continuam interativos. O mockup usa os dados e as APIs do próprio projeto. A organização da interface foi inspirada em painéis de monitoramento da [USGS](https://dashboard.waterdata.usgs.gov/app/nwd/en/?aoi=default), [NOAA](https://water.noaa.gov/) e [SGB/SACE](https://sace.sgb.gov.br/).
+**Um único cenário para a tela inteira.** Ao abrir, a tela fica **sincronizada com o tempo real**: o nível em uso é a leitura mais recente da estação ANA 87450020, consultada pelo servidor a cada 5 minutos (`GET /api/live`). O usuário pode escolher outro nível no controle, um horário da previsão ou o recorde de 2024; nesse momento a tela passa para **cenário manual** e todos os mapas, indicadores e gráficos mudam juntos. O botão **Voltar ao tempo real** retoma a leitura atual.
 
-### Início do cálculo de rotas da Tela 2
+**Referencial.** Os níveis são mostrados na régua do Cais Mauá, a mesma escala da Tela 1 e do recorde de 5,35 m. A leitura da ANA está no referencial corrigido (nível médio do mar); a conversão soma 1,18 m, a diferença que a [ANA/SGB documenta](https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs) para o pico de 05/05/2024 (5,35 m na régua ↔ 4,17 m).
 
-O endpoint `POST /api/routing/calculate` recebe uma rede de nós e trechos com comprimento e profundidade estimada da água. Exemplo de corpo:
+**Componente de mapas, logo abaixo do nível atual, em três abas:**
 
-```json
-{
-  "origin": "A",
-  "destination": "B",
-  "nodes": [{"id": "A", "depth_m": 0}, {"id": "B", "depth_m": 0}],
-  "edges": [{"source": "A", "target": "B", "length_m": 120, "depth_m": 0, "bidirectional": true}]
-}
+1. **Bairros:** os [limites oficiais da Prefeitura](https://prefeitura.poa.br/smpg/observapoa/mapas) coloridos pela porcentagem de prédios afetados na simulação do INCT, no nível do cenário. Abaixo de 3,0 m o INCT não indica prédios afetados. Clicar em um bairro leva o ponto do 3D para lá.
+2. **Água no ponto · 3D:** escolha um ponto da cidade no mini mapa. A tela mostra 1,2 km × 1,2 km em volta dele, com o mapa do OpenStreetMap sobre o relevo e a água no nível do cenário. Informa a profundidade no ponto e a partir de que nível da régua a água chega ali (`GET /api/water/point`).
+3. **Rotas a pé:** rede de ruas do centro (OpenStreetMap). A profundidade de cada trecho vem do mesmo modelo de água, no nível do cenário; a mancha observada em 06/05/2024 pode ser exibida para comparação (`POST /api/routing/plan` com `level_regua_m`).
+
+**Modelo de água por nível** (`scripts/preparar_modelo_agua.py` → `dados/processados/modelo_agua_poa.npz`). Grade de 20 m sobre Porto Alegre:
+
+- O relevo aberto ([Terrain Tiles, AWS](https://registry.opendata.aws/terrain-tiles/)) inclui prédios e vegetação. Por isso o chão é corrigido com a profundidade do [Copernicus EMSN194](https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products) em 06 e 08/05/2024 (chão = nível da ANA no dia − profundidade) e, fora dessas áreas, com um viés local estimado num raio de 1 km.
+- A água entra a partir do lago (*priority flood*): para cada célula guarda-se a menor cota da água que a alcança por células conectadas. Isso supõe que o sistema de proteção deixe a água passar, como em 2024.
+- Terra firme não fica abaixo da cota de alerta (2,50 m na régua).
+- Validação contra a mancha observada pelo Copernicus, dentro de Porto Alegre (`dados/processados/modelo_agua_validacao.json`): IoU de 0,80 em 06/05 (data usada na calibração), 0,45 em 04/05 e 0,32 em 10/05/2024. A precisão é quase total (≥ 0,99: onde o modelo põe água, havia água), mas o modelo subestima a área porque não representa a água que ficou represada atrás dos diques quando o rio baixou.
+
+**Previsão do nível** (`scripts/preparar_previsao.py` → `dados/processados/modelo_previsao.json`). Para cada horizonte de 6 a 72 h, uma regressão linear prevê a variação do nível a partir da tendência das últimas 6, 24 e 72 h e da distância à média de 30 dias. Foi treinada com a série horária da estação desde 2023 e testada nos 12 meses mais recentes: erro médio de 16 cm em 72 h, contra 17 cm de repetir o último nível. A faixa mostrada cobre 80% dos erros do teste. É um modelo **estatístico experimental**: não usa chuva prevista, vento nem vazão dos rios e não substitui os [boletins do SGB](https://sace.sgb.gov.br/guaiba/), cuja série pública estruturada não foi encontrada.
+
+**Enchente de 2024.** A série ANA de maio e junho de 2024 continua com filtro de período e três gráficos (nível, faixa diária e completude); o cenário em uso aparece como linha de referência. O painel de ligação compara o cenário, a simulação INCT e o recorde de 2024 no mesmo eixo.
+
+**Cálculo de rotas.** Com origem seca, escolhe o caminho seco mais curto. Com origem alagada, minimiza primeiro a maior profundidade atravessada, depois a distância na água e, por fim, o comprimento total; ao alcançar área seca, não volta à água. Trechos sem cota (pontes) não são usados. Sem caminho verificável ou com destino alagado, a tela não recomenda rota. O protótipo é a pé e não indica passagem segura.
+
+Para refazer as bases da Tela 2 por código:
+
+```bash
+python3 -m scripts.preparar_bairros
+python3 -m scripts.preparar_rotas_2024
+python3 -m scripts.preparar_modelo_agua
+python3 -m scripts.preparar_previsao
 ```
 
-Com origem seca, o cálculo escolhe o caminho seco mais curto. Com origem alagada, minimiza primeiro a maior profundidade atravessada após a origem, depois a distância percorrida na água e, por fim, o comprimento total. Ao alcançar uma área seca, não volta a entrar na água. Trechos com `depth_m: null` não são usados. O endpoint devolve `no_route` quando não há caminho verificável ou o destino está alagado.
-
-O motor está ligado a um protótipo de mapa em [http://127.0.0.1:8000/tela2](http://127.0.0.1:8000/tela2). A Tela 2 também traz três gráficos da série ANA/SGB de maio e junho de 2024, filtro de datas, leitura recente e o recorde em seus dois referenciais. A leitura recente é consultada pelo servidor a cada cinco minutos e só aparece como atual se tiver até duas horas segundo o relógio local; o horário da fonte não informa fuso explícito.
-
-A área do mapa é um recorte do centro de Porto Alegre e o único cenário espacial disponível é **06/05/2024**, com mancha e profundidade modeladas pelo [Copernicus EMSN194](https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products) e ruas do [OpenStreetMap](https://www.openstreetmap.org/copyright). A página escolhe A e B com cliques e usa `POST /api/routing/plan`; o servidor encaixa cada clique no trecho de rua mais próximo (até 25 m). O arquivo preparado está em `dados/processados/rotas_centro_2024_05_06.json`; a data da coleta, as fontes, o sistema de coordenadas e a resolução constam no próprio arquivo. Para refazer a coleta por código, execute `python3 -m scripts.preparar_rotas_2024`. O script também aceita `--source-zip` e `--osm-xml` para usar arquivos já baixados.
-
-O mapa compara a rota de 06/05/2024 com o menor caminho na mesma rede **sem alagamento**. Este segundo caminho é uma hipótese de referência para medir o desvio, não uma medição de outro dia.
-Os botões “Exemplo de desvio” e “Origem alagada” carregam pontos dentro do recorte para demonstrar os dois cálculos; também é possível escolher A e B diretamente no mapa.
-
-O mapa é um **protótipo histórico para estudo**, sem condições atuais das vias nem validação local da profundidade. Não usa os níveis do INCT para inferir água em ruas: o JSON do INCT contém totais por bairro e não fornece essas profundidades. Execute `python3 -m unittest discover -s tests -v` para verificar os casos principais.
-
-O mapa temático colore os [limites oficiais dos bairros da Prefeitura](https://prefeitura.poa.br/smpg/observapoa/mapas) pela porcentagem de prédios afetados na simulação INCT. A cor **não** localiza a inundação dentro do bairro. Para reproduzir a camada, execute `python3 -m scripts.preparar_bairros`; o arquivo leve gerado fica em `dados/processados/bairros_poa.geojson`.
-
-A visualização 3D usa relevo do [Mapzen Terrain Tiles no AWS Open Data](https://registry.opendata.aws/terrain-tiles/) e a profundidade modelada do [Copernicus EMSN194](https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products) para 06/05/2024. Execute `python3 -m scripts.preparar_relevo_3d` para recriar `dados/processados/relevo_3d_2024_05_06.json`. A sobreposição é **ilustrativa**: as duas fontes não foram integradas em um modelo hidráulico validado, e a cena não usa nem prevê a cota do Guaíba. O [produto MDE do SGB](https://rigeo.sgb.gov.br/items/6b0101c8-ff98-4fbf-aa59-c94779534468) foi avaliado, mas seu ZIP apresentou erro CRC no raster ADF e blocos ilegíveis nesta coleta.
-
-A previsão do nível para os próximos dias ainda depende de uma fonte oficial de níveis futuros coletável por código ou de um modelo próprio validado. O [SGB divulga boletins durante eventos hidrológicos](https://www.sgb.gov.br/w/boletim-de-alerta-hidrologico-da-bacia-do-guaiba-monitoramento-segue-com-atualizacao-diaria-das-previsoes), mas não foi confirmada uma série pública estruturada para alimentar automaticamente alertas por bairro. A Tela 2 não gera esses alertas sem a previsão e a compatibilidade de referencial verificadas.
+Os downloads (Copernicus, blocos de relevo e série mensal da ANA) ficam em `dados/cache/`, fora do Git, para não repetir requisições.
 
 ## Como reproduzir
 
@@ -94,9 +101,10 @@ Abra os notebooks na ordem `01_limpeza_inct.ipynb`, `02_coleta_limpeza_ana.ipynb
 - `relatorios/wireframe.md`: esboço das duas telas.
 - `relatorios/checklist_tela2.md`: requisitos, extras e critérios de conclusão da Tela 2.
 - `dados/processados/bairros_poa.geojson`: limites oficiais simplificados dos 94 bairros.
-- `dados/processados/relevo_3d_2024_05_06.json`: duas malhas históricas de relevo e profundidade para visualização.
-- `backend/`: API das duas telas e cálculo de rotas.
-- `frontend/`: interfaces locais do INCT e da análise ANA com mapa histórico.
+- `dados/processados/modelo_agua_poa.npz` e `modelo_agua_validacao.json`: modelo de água por nível e sua validação.
+- `dados/processados/modelo_previsao.json`: coeficientes e validação da previsão do nível.
+- `backend/`: API das duas telas, modelo de água, previsão e cálculo de rotas.
+- `frontend/`: Tela 1 (`index.html`) e Tela 2 (`tela2.html`).
 
 ## Fontes e limites
 
@@ -106,4 +114,4 @@ Os resultados do INCT são estimativas de uma simulação; as medições da ANA 
 
 ## Uso de IA
 
-Codex foi usado em 26/10/2026 para preparar os scripts, notebooks, limpeza, gráficos e relatórios iniciais. A equipe deve revisar e conseguir explicar o código e registrar esse uso no fórum da disciplina, conforme o enunciado.
+Codex foi usado em 26/10/2026 para preparar os scripts, notebooks, limpeza, gráficos e relatórios iniciais. Claude Code foi usado em 24/11/2026 para organizar os commits finais, reorganizar a Tela 2 (tempo real, abas, 3D por ponto), criar o modelo de água e a previsão com suas validações e redigir `relatorios/dashboard.pdf`. A equipe deve revisar e conseguir explicar o código e registrar esse uso no fórum da disciplina, conforme o enunciado.
