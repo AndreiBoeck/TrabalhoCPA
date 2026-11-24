@@ -12,3 +12,4 @@ shapely>=2,<3
 tifffile>=2023.9
 imagecodecs>=2023.9
 rasterio>=1.4,<2
+Pillow>=10

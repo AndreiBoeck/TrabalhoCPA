@@ -1,0 +1,207 @@
+{
+  "generated_at_utc": "2026-11-24T05:08:10+00:00",
+  "station_code": "87450020",
+  "source_url": "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos",
+  "vertical_reference": "referencial corrigido da estação (nível médio do mar)",
+  "features": [
+    "d6",
+    "d24",
+    "d72",
+    "anom30"
+  ],
+  "feature_description": {
+    "d6": "nível atual - nível 6 h antes",
+    "d24": "nível atual - nível 24 h antes",
+    "d72": "nível atual - nível 72 h antes",
+    "anom30": "nível atual - média dos últimos 30 dias"
+  },
+  "training": {
+    "first_hour": "2024-05-03 15:00:00",
+    "last_hour": "2026-11-24 01:00:00",
+    "test_from": "2025-11-24 01:00:00",
+    "hourly_points": 21615
+  },
+  "horizons": [
+    {
+      "hours": 6,
+      "coef": [
+        -0.00147,
+        0.191607,
+        -0.030648,
+        -0.015192,
+        -0.019571
+      ],
+      "mae_model_m": 0.06,
+      "mae_persistence_m": 0.061,
+      "p10_error_m": -0.085,
+      "p90_error_m": 0.104,
+      "test_points": 7962
+    },
+    {
+      "hours": 12,
+      "coef": [
+        -0.002971,
+        -0.190592,
+        0.016118,
+        -0.035483,
+        -0.033855
+      ],
+      "mae_model_m": 0.09,
+      "mae_persistence_m": 0.093,
+      "p10_error_m": -0.128,
+      "p90_error_m": 0.157,
+      "test_points": 7944
+    },
+    {
+      "hours": 18,
+      "coef": [
+        -0.003622,
+        -0.235825,
+        0.014981,
+        -0.057942,
+        -0.031291
+      ],
+      "mae_model_m": 0.098,
+      "mae_persistence_m": 0.102,
+      "p10_error_m": -0.137,
+      "p90_error_m": 0.176,
+      "test_points": 7931
+    },
+    {
+      "hours": 24,
+      "coef": [
+        -0.004229,
+        0.067798,
+        -0.062802,
+        -0.073063,
+        -0.031709
+      ],
+      "mae_model_m": 0.106,
+      "mae_persistence_m": 0.109,
+      "p10_error_m": -0.147,
+      "p90_error_m": 0.196,
+      "test_points": 7919
+    },
+    {
+      "hours": 30,
+      "coef": [
+        -0.005399,
+        0.088731,
+        -0.087092,
+        -0.080721,
+        -0.04489
+      ],
+      "mae_model_m": 0.124,
+      "mae_persistence_m": 0.129,
+      "p10_error_m": -0.17,
+      "p90_error_m": 0.216,
+      "test_points": 7907
+    },
+    {
+      "hours": 36,
+      "coef": [
+        -0.006535,
+        -0.185588,
+        -0.043744,
+        -0.08787,
+        -0.054095
+      ],
+      "mae_model_m": 0.136,
+      "mae_persistence_m": 0.143,
+      "p10_error_m": -0.189,
+      "p90_error_m": 0.233,
+      "test_points": 7895
+    },
+    {
+      "hours": 42,
+      "coef": [
+        -0.007152,
+        -0.23519,
+        -0.034952,
+        -0.102458,
+        -0.049531
+      ],
+      "mae_model_m": 0.138,
+      "mae_persistence_m": 0.146,
+      "p10_error_m": -0.195,
+      "p90_error_m": 0.236,
+      "test_points": 7883
+    },
+    {
+      "hours": 48,
+      "coef": [
+        -0.007849,
+        0.0034,
+        -0.078105,
+        -0.114928,
+        -0.047309
+      ],
+      "mae_model_m": 0.142,
+      "mae_persistence_m": 0.15,
+      "p10_error_m": -0.201,
+      "p90_error_m": 0.245,
+      "test_points": 7871
+    },
+    {
+      "hours": 54,
+      "coef": [
+        -0.00898,
+        0.022655,
+        -0.077891,
+        -0.117508,
+        -0.058964
+      ],
+      "mae_model_m": 0.152,
+      "mae_persistence_m": 0.16,
+      "p10_error_m": -0.209,
+      "p90_error_m": 0.255,
+      "test_points": 7859
+    },
+    {
+      "hours": 60,
+      "coef": [
+        -0.010013,
+        -0.195408,
+        -0.039145,
+        -0.120456,
+        -0.066309
+      ],
+      "mae_model_m": 0.158,
+      "mae_persistence_m": 0.168,
+      "p10_error_m": -0.217,
+      "p90_error_m": 0.265,
+      "test_points": 7847
+    },
+    {
+      "hours": 66,
+      "coef": [
+        -0.010495,
+        -0.197885,
+        -0.048353,
+        -0.138107,
+        -0.057598
+      ],
+      "mae_model_m": 0.159,
+      "mae_persistence_m": 0.169,
+      "p10_error_m": -0.212,
+      "p90_error_m": 0.264,
+      "test_points": 7835
+    },
+    {
+      "hours": 72,
+      "coef": [
+        -0.011061,
+        0.028326,
+        -0.100116,
+        -0.156337,
+        -0.051974
+      ],
+      "mae_model_m": 0.159,
+      "mae_persistence_m": 0.17,
+      "p10_error_m": -0.215,
+      "p90_error_m": 0.267,
+      "test_points": 7823
+    }
+  ],
+  "note": "Modelo estatístico experimental baseado apenas no histórico do nível. Não usa chuva prevista, vento nem vazão dos afluentes; não substitui os boletins oficiais do SGB."
+}

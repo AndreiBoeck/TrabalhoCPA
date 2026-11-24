@@ -1,4 +1,4 @@
-"""API e servidor local da primeira tela do projeto."""
+"""API e servidor local das duas telas do projeto."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ from pydantic import BaseModel, Field
 import requests
 
 from backend.routing import RouteRequest, calculate_route
+from backend import water
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "dados" / "processados" / "inct_simai_limpo.json"
 FRONTEND = ROOT / "frontend"
 ROUTING_DATA = ROOT / "dados" / "processados" / "rotas_centro_2024_05_06.json"
 BAIRROS_DATA = ROOT / "dados" / "processados" / "bairros_poa.geojson"
-TERRAIN_DATA = ROOT / "dados" / "processados" / "relevo_3d_2024_05_06.json"
 ANA_DATA = ROOT / "dados" / "processados" / "ana_guaiba_2024_limpo.csv"
 ANA_METADATA = ROOT / "dados" / "originais" / "ana_metadados_coleta.csv"
 
@@ -89,11 +89,6 @@ def screen_two():
     return FileResponse(FRONTEND / "tela2.html")
 
 
-@app.get("/mockup")
-def mockup():
-    return FileResponse(FRONTEND / "mockup.html")
-
-
 @app.get("/api/metadata")
 def metadata():
     data = dataset()
@@ -139,13 +134,6 @@ def bairros_geometry():
     return FileResponse(BAIRROS_DATA, media_type="application/geo+json")
 
 
-@app.get("/api/terrain/historical")
-def historical_terrain():
-    if not TERRAIN_DATA.exists():
-        raise HTTPException(503, "Relevo histórico não preparado")
-    return FileResponse(TERRAIN_DATA, media_type="application/json")
-
-
 @lru_cache(maxsize=1)
 def ana_history() -> dict:
     if not ANA_DATA.exists() or not ANA_METADATA.exists():
@@ -188,49 +176,95 @@ def ana_history_public():
     return ana_history()
 
 
+ANA_SOURCE = "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos"
+
+
+def _ana_readings(start, end) -> list[tuple[datetime, float]]:
+    response = requests.get(ANA_SOURCE, params={
+        "codEstacao": "87450020", "dataInicio": start.strftime("%d/%m/%Y"), "dataFim": end.strftime("%d/%m/%Y"),
+    }, headers={"User-Agent": "TrabalhoCPA/1.0 (pesquisa academica)"}, timeout=20)
+    response.raise_for_status()
+    readings = []
+    for item in ET.fromstring(response.content).iter():
+        if item.tag.split("}")[-1] != "DadosHidrometereologicos":
+            continue
+        row = {child.tag.split("}")[-1]: child.text for child in item}
+        if row.get("CodEstacao") != "87450020" or not row.get("Nivel") or not row.get("DataHora"):
+            continue
+        try:
+            measured = datetime.fromisoformat(row["DataHora"].strip())
+            level = float(row["Nivel"]) / 100
+        except (ValueError, TypeError):
+            continue
+        if -1 < level < 20:
+            readings.append((measured, level))
+    return sorted(readings)
+
+
+def _hourly(readings: list[tuple[datetime, float]]) -> list[tuple[datetime, float]]:
+    buckets: dict[datetime, list[float]] = {}
+    for measured, level in readings:
+        buckets.setdefault(measured.replace(minute=0, second=0), []).append(level)
+    return [(hour, sum(v) / len(v)) for hour, v in sorted(buckets.items())]
+
+
 @lru_cache(maxsize=2)
-def _fetch_ana_latest(time_bucket: int) -> dict:
+def _fetch_live(time_bucket: int) -> dict:
     now = datetime.now().astimezone()
-    source = "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos"
     base = {"station_code": "87450020", "station_name": "Usina do Gasômetro",
             "vertical_reference": "Marco IBGE 1788A; nível médio do mar",
-            "source_url": source, "queried_at": now.isoformat(timespec="seconds"),
+            "regua_offset_m": water.REGUA_OFFSET,
+            "source_url": ANA_SOURCE, "queried_at": now.isoformat(timespec="seconds"),
             "time_note": "Horário da medição informado pela ANA sem fuso explícito; avaliação de recência usa o horário local do servidor."}
     try:
-        response = requests.get(source, params={
-            "codEstacao": "87450020",
-            "dataInicio": (now.date() - timedelta(days=3)).strftime("%d/%m/%Y"),
-            "dataFim": now.date().strftime("%d/%m/%Y"),
-        }, headers={"User-Agent": "TrabalhoCPA/1.0 (pesquisa academica)"}, timeout=15)
-        response.raise_for_status()
-        readings = []
-        for item in ET.fromstring(response.content).iter():
-            if item.tag.split("}")[-1] != "DadosHidrometereologicos":
-                continue
-            row = {child.tag.split("}")[-1]: child.text for child in item}
-            if row.get("CodEstacao") != "87450020" or not row.get("Nivel") or not row.get("DataHora"):
-                continue
-            try:
-                measured = datetime.fromisoformat(row["DataHora"].strip())
-                level = float(row["Nivel"]) / 100
-            except (ValueError, TypeError):
-                continue
-            if measured and 0 <= level < 20:
-                readings.append((measured, level))
-        if not readings:
-            return {**base, "status": "unavailable", "reason": "no_measurement"}
-        measured, level = max(readings, key=lambda item: item[0])
-        age_minutes = (now.replace(tzinfo=None) - measured).total_seconds() / 60
-        return {**base, "status": "recent" if 0 <= age_minutes <= 120 else "stale",
-                "measurement_at": measured.isoformat(timespec="seconds"),
-                "level_m": level, "age_minutes": round(age_minutes, 1)}
+        readings = _ana_readings(now.date() - timedelta(days=32), now.date())
     except (requests.RequestException, ET.ParseError):
-        return {**base, "status": "unavailable", "reason": "source_unavailable"}
+        return {**base, "status": "unavailable", "reason": "source_unavailable", "recent": [],
+                "forecast": {"status": "unavailable", "reason": "source_unavailable"}}
+    if not readings:
+        return {**base, "status": "unavailable", "reason": "no_measurement", "recent": [],
+                "forecast": {"status": "unavailable", "reason": "no_measurement"}}
+    measured, level = readings[-1]
+    age_minutes = (now.replace(tzinfo=None) - measured).total_seconds() / 60
+    hourly = _hourly(readings)
+    week_start = hourly[-1][0] - timedelta(days=7)
+    return {**base, "status": "recent" if 0 <= age_minutes <= 120 else "stale",
+            "measurement_at": measured.isoformat(timespec="seconds"),
+            "level_m": level, "level_regua_m": round(water.msl_to_regua(level), 2),
+            "age_minutes": round(age_minutes, 1),
+            "recent": [[t.isoformat(timespec="minutes"), round(v, 3)] for t, v in hourly if t >= week_start],
+            "forecast": water.forecast(hourly)}
+
+
+@app.get("/api/live")
+def live():
+    """Leitura atual, últimos 7 dias (horário) e previsão de 72 h."""
+    return _fetch_live(int(datetime.now().timestamp() // 300))
 
 
 @app.get("/api/ana/latest")
 def ana_latest():
-    return _fetch_ana_latest(int(datetime.now().timestamp() // 300))
+    data = live()
+    return {k: v for k, v in data.items() if k not in {"recent", "forecast"}}
+
+
+@app.get("/api/forecast/model")
+def forecast_model():
+    return water.forecast_model()
+
+
+@app.get("/api/water/point")
+def water_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180)):
+    """Chão e cota de entrada da água em 1,2 km × 1,2 km em volta do ponto."""
+    window = water.point_window(lat, lon)
+    if window is None:
+        raise HTTPException(422, "Ponto fora da área do modelo (Porto Alegre)")
+    return {**window, "regua_offset_m": water.REGUA_OFFSET, "validation": water.validation()}
+
+
+@app.get("/api/water/validation")
+def water_validation():
+    return water.validation()
 
 
 @app.post("/api/routing/calculate")
@@ -257,6 +291,12 @@ class MapPoint(BaseModel):
 class MapRouteRequest(BaseModel):
     origin: MapPoint
     destination: MapPoint
+    level_regua_m: Optional[float] = Field(default=None, ge=0, le=12)
+
+
+def network_for(level: Optional[float]) -> dict:
+    """Sem nível: cenário histórico de 06/05/2024. Com nível: modelo de água por nível."""
+    return routing_network() if level is None else water.network_at_level(routing_network(), level)
 
 
 def nearest_edge(point: MapPoint, network: dict) -> dict:
@@ -298,13 +338,13 @@ def attach_point(name: str, snapped: dict, network: dict, nodes: list, edges: li
 
 
 @app.get("/api/routing/network")
-def routing_network_public():
-    return routing_network()
+def routing_network_public(level: Optional[float] = Query(default=None, ge=0, le=12)):
+    return network_for(level)
 
 
 @app.post("/api/routing/plan")
 def routing_plan(request: MapRouteRequest):
-    network = routing_network()
+    network = network_for(request.level_regua_m)
     origin = nearest_edge(request.origin, network)
     destination = nearest_edge(request.destination, network)
     if max(origin["distance_m"], destination["distance_m"]) > 25:
