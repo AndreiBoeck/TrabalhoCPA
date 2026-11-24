@@ -3,59 +3,144 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>O Guaíba em 2024 | TrabalhoCPA</title>
+  <meta name="description" content="Tela 2: nível do Guaíba em tempo real, previsão e água por bairro, ponto e rua em Porto Alegre." />
+  <title>O Guaíba agora | TrabalhoCPA</title>
   <link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="/assets/route.css" />
   <link rel="stylesheet" href="/assets/ana.css" />
-  <link rel="stylesheet" href="/assets/impact.css" />
-  <link rel="stylesheet" href="/assets/terrain.css" />
+  <link rel="stylesheet" href="/assets/tela2.css" />
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
+  <script defer src="/assets/scenario.js"></script>
+  <script defer src="/assets/live.js"></script>
+  <script defer src="/assets/maps.js"></script>
+  <script defer src="/assets/impact.js"></script>
+  <script defer src="/assets/point3d.js"></script>
   <script defer src="/assets/route.js"></script>
   <script defer src="/assets/ana.js"></script>
-  <script defer src="/assets/impact.js"></script>
-  <script defer src="/assets/terrain.js"></script>
 </head>
 <body>
-  <header class="topbar"><div class="brand"><span class="brand-icon">≈</span><div><strong>TrabalhoCPA</strong><small>Projeto Extensionista · Tela 2</small></div></div><a href="/">← Simulação INCT</a></header>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">≈</span><div><strong>TrabalhoCPA</strong><small>Projeto Extensionista · Tela 2</small></div></div>
+    <div class="sync-bar">
+      <span id="sync-pill" class="sync-pill live"><i aria-hidden="true"></i><span id="sync-text">Tempo real</span></span>
+      <button id="sync-button" type="button" class="sync-button" hidden>↺ Voltar ao tempo real</button>
+    </div>
+    <a href="/">← Simulação INCT</a>
+  </header>
   <main>
-    <div class="heading"><div><p class="eyebrow">DADOS E ALAGAMENTO</p><h1>O Guaíba em 2024</h1><p>Explore o nível medido durante a enchente e um protótipo de rotas para o cenário histórico de <strong>6 de maio de 2024</strong>.</p></div><span class="scenario">Tela 2 · fontes externas</span></div>
+    <div class="heading"><div><p class="eyebrow">NÍVEL DO GUAÍBA · PORTO ALEGRE</p><h1>O Guaíba agora e o que ele alaga</h1><p>A tela acompanha a leitura mais recente da ANA. Escolha outro nível, ou um horário da previsão, e <strong>todos os mapas e números</strong> passam a mostrar esse cenário. O botão <strong>Voltar ao tempo real</strong> retoma a leitura atual.</p></div><span class="scenario">Tela 2 · fontes externas</span></div>
+
+    <section class="now-grid" aria-label="Nível atual e cenário">
+      <article class="current-level" id="current-card">
+        <p class="eyebrow">LEITURA ATUAL · ANA 87450020</p>
+        <strong id="current-level-value">Consultando...</strong>
+        <span id="current-level-msl">—</span>
+        <span id="current-level-time">Estação 87450020 · Usina do Gasômetro</span>
+        <p id="current-level-status">Consultando a ANA.</p>
+        <small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos" target="_blank" rel="noopener noreferrer">fonte</a> · consulta <time id="current-level-query">—</time> · régua = referencial corrigido + 1,18 m (<a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">ANA/SGB</a>)</small>
+      </article>
+      <article class="scenario-card" id="scenario-card">
+        <div class="scenario-top"><div><p class="eyebrow">CENÁRIO EM USO EM TODA A TELA</p><strong id="scenario-level">—</strong><span id="scenario-label">Aguardando leitura</span></div></div>
+        <label class="scenario-slider"><span>Escolher nível (régua do Cais Mauá)</span><input id="scenario-range" type="range" min="0" max="10" step="0.1" value="3" aria-label="Nível do Guaíba em metros na régua do Cais Mauá" /></label>
+        <div class="range-ticks"><span>0 m</span><span>3 m · início INCT</span><span class="record-tick">5,35 m · recorde</span><span>10 m</span></div>
+        <div class="scenario-buttons">
+          <button type="button" data-forecast="24">Previsão +24 h</button>
+          <button type="button" data-forecast="48">+48 h</button>
+          <button type="button" data-forecast="72">+72 h</button>
+          <button type="button" id="record-button">Recorde 2024</button>
+        </div>
+      </article>
+      <article class="indicator-card">
+        <div><span>Pessoas afetadas</span><strong id="kpi-people">—</strong><small>simulação INCT, toda a cidade</small></div>
+        <div><span>Bairros atingidos</span><strong id="kpi-bairros">—</strong><small>de 94 · simulação INCT</small></div>
+        <div><span>Ruas com água no centro</span><strong id="kpi-streets">—</strong><small>trechos a pé · modelo de água</small></div>
+        <div><span>Água no ponto escolhido</span><strong id="kpi-point">—</strong><small id="kpi-point-label">ponto do mapa 3D</small></div>
+      </article>
+    </section>
+
+    <section class="maps-card" aria-labelledby="maps-title">
+      <div class="maps-head">
+        <div><p class="eyebrow">MAPAS DO CENÁRIO</p><h2 id="maps-title">Onde a água chega neste nível</h2></div>
+        <div class="map-tabs" role="tablist" aria-label="Mapas">
+          <button type="button" role="tab" class="active" aria-selected="true" aria-controls="pane-impact" data-tab="impact">Bairros</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="pane-point" data-tab="point">Água no ponto · 3D</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="pane-route" data-tab="route">Rotas a pé</button>
+        </div>
+      </div>
+
+      <div id="pane-impact" class="map-pane active" role="tabpanel">
+        <div class="pane-layout">
+          <div id="impact-map" role="img" aria-label="Mapa dos bairros coloridos pela porcentagem de prédios afetados no cenário"></div>
+          <aside class="pane-side">
+            <p class="eyebrow">SIMULAÇÃO INCT POR BAIRRO</p>
+            <h3 id="impact-summary">Carregando bairros...</h3>
+            <p id="impact-selected">Clique em um bairro: ele mostra os valores e leva o ponto do 3D para lá.</p>
+            <div class="impact-legend"><span>0%</span><i></i><span>100%</span></div>
+            <p class="caveat">A cor resume a porcentagem de prédios afetados no bairro inteiro, segundo o INCT; não indica quais ruas ficam alagadas. Para ver o terreno, use a aba 3D.</p>
+            <small>Percentuais: <a href="/api/metadata" target="_blank" rel="noopener noreferrer">JSON INCT fornecido ao projeto</a> (data de recebimento não documentada). Limites: <a href="https://prefeitura.poa.br/smpg/observapoa/mapas" target="_blank" rel="noopener noreferrer">Prefeitura de Porto Alegre</a>, coleta <time id="impact-collected">—</time>.</small>
+          </aside>
+        </div>
+      </div>
+
+      <div id="pane-point" class="map-pane" role="tabpanel" hidden>
+        <div class="pane-layout">
+          <div class="point-view">
+            <canvas id="point-canvas" aria-label="Vista 3D do terreno em volta do ponto escolhido com a água no nível do cenário"></canvas>
+            <span id="point-status" class="canvas-status">Carregando terreno...</span>
+            <div class="point-controls">
+              <label>Girar <input id="point-angle" type="range" min="0" max="360" value="35" /></label>
+              <label>Exagero vertical <input id="point-exaggeration" type="range" min="1" max="8" step="0.5" value="3" /></label>
+            </div>
+          </div>
+          <aside class="pane-side">
+            <p class="eyebrow">PONTO ESCOLHIDO · 1,2 KM × 1,2 KM</p>
+            <div id="point-picker" role="application" aria-label="Mapa para escolher o ponto da vista 3D"></div>
+            <div id="point-metrics" class="point-metrics">—</div>
+            <p class="caveat">Modelo simplificado: a água entra a partir do lago até a cota do nível escolhido, como se o sistema de proteção falhasse como em 2024. Não considera chuva local, bombas, correnteza nem obras recentes.</p>
+            <small id="point-sources">Terreno: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Terrain Tiles (AWS)</a> corrigido com a profundidade do <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a> e o nível da ANA em 06 e 08/05/2024. Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. <span id="point-validation"></span></small>
+          </aside>
+        </div>
+      </div>
+
+      <div id="pane-route" class="map-pane" role="tabpanel" hidden>
+        <div class="workspace">
+          <section class="map-panel" aria-label="Mapa de rotas"><div id="route-map" role="application" aria-label="Mapa para selecionar origem e destino"></div><div class="legend"><span><i class="water-area"></i>Mancha observada 06/05/2024</span><span><i class="dry"></i>Rua sem água</span><span><i class="flood"></i>Rua com água no cenário</span><span><i class="unknown"></i>Sem cota (pontes)</span><span><i class="normal-path"></i>Sem alagamento</span><span><i class="path"></i>Rota no cenário</span></div></section>
+          <aside class="controls">
+            <h2>Traçar rota</h2>
+            <p id="instruction">Clique sobre uma linha de rua para marcar a origem A.</p>
+            <div class="point"><span class="point-letter">A</span><div><small>ORIGEM</small><strong id="origin-label">Não escolhida</strong></div></div>
+            <div class="point"><span class="point-letter destination-letter">B</span><div><small>DESTINO</small><strong id="destination-label">Não escolhido</strong></div></div>
+            <div class="examples"><button id="example-detour" type="button">Exemplo de desvio</button><button id="example-flooded" type="button">Origem alagada</button></div>
+            <button id="clear-route" type="button">Escolher outros pontos</button>
+            <label class="toggle"><input id="show-observed" type="checkbox" /> Mostrar mancha observada em 06/05/2024</label>
+            <div id="route-result" class="route-result" role="status" aria-live="polite">Aguardando origem e destino.</div>
+            <p class="limit">Protótipo a pé no centro. A profundidade vem do modelo de água no nível do cenário; o mapa não considera bloqueios, correnteza, pontes sem cota ou condições atuais. Menor exposição não significa passagem segura.</p>
+            <div class="sources"><strong>Fontes</strong><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap · rede de ruas</a><a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194 · mancha e profundidade 2024</a><small id="collection-date">Carregando data de coleta...</small></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="forecast-card" aria-labelledby="forecast-title">
+      <div class="section-head"><div><p class="eyebrow">ÚLTIMOS 7 DIAS E PRÓXIMAS 72 H</p><h2 id="forecast-title">Previsão do nível</h2><p>Clique em um ponto da previsão para usar aquele horário como cenário em toda a tela.</p></div><div id="forecast-badge" class="forecast-badge">—</div></div>
+      <svg id="forecast-chart" viewBox="0 0 900 280" role="img" aria-label="Nível observado nos últimos 7 dias e previsão para 72 horas"></svg>
+      <div class="forecast-legend"><span><i class="obs"></i>Observado (ANA)</span><span><i class="fc"></i>Previsão</span><span><i class="band"></i>Faixa provável (80% dos erros no teste)</span><span><i class="sel"></i>Cenário em uso</span></div>
+      <p id="forecast-note" class="forecast-note">—</p>
+    </section>
+
     <section class="observation-section" aria-labelledby="observations-title">
-      <div class="section-head"><div><p class="eyebrow">MEDIÇÕES ANA/SGB</p><h2 id="observations-title">Evolução do nível no Gasômetro</h2><p>Estação 87450020 · referencial corrigido ao nível médio do mar</p></div><div class="date-filter"><label>De <input id="date-start" type="date" /></label><label>Até <input id="date-end" type="date" /></label></div></div>
-      <div class="current-level"><div><p class="eyebrow">ÚLTIMA LEITURA DISPONÍVEL</p><strong id="current-level-value">Consultando...</strong><span id="current-level-time">Estação 87450020 · Usina do Gasômetro</span></div><p id="current-level-status">Consultando a ANA.</p><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos" target="_blank" rel="noopener noreferrer">fonte</a> · consulta <time id="current-level-query">—</time> · referencial corrigido ao nível médio do mar</small></div>
+      <div class="section-head"><div><p class="eyebrow">ENCHENTE DE 2024 · MEDIÇÕES ANA/SGB</p><h2 id="observations-title">Como o Guaíba se comportou em maio e junho de 2024</h2><p>Estação 87450020 · referencial corrigido ao nível médio do mar · a linha tracejada mostra o cenário em uso</p></div><div class="date-filter"><label>De <input id="date-start" type="date" /></label><label>Até <input id="date-end" type="date" /></label></div></div>
       <div class="ana-metrics"><div><span>Máximo no período</span><strong id="ana-peak">—</strong><small id="ana-peak-date">—</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div><div><span>Medições disponíveis</span><strong id="ana-available">—</strong><small id="ana-coverage">—</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div><div><span>Período mostrado</span><strong id="ana-days">—</strong><small>dias selecionados</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div></div>
-      <div class="record-card"><div><p class="eyebrow">MAIOR NÍVEL REGISTRADO · 05/05/2024</p><strong>5,35 m</strong><span>régua emergencial · Usina do Gasômetro</span></div><div><span>O mesmo pico corresponde a</span><strong>4,17 m</strong><span>estação 87450020 · referencial corrigido ao nível médio do mar</span></div><p>Os valores usam referenciais diferentes e não são traçados no mesmo eixo. <a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">Explicação ANA/SGB</a> · consulta em 09/11/2026.</p></div>
+      <div class="record-card"><div><p class="eyebrow">MAIOR NÍVEL REGISTRADO · 05/05/2024</p><strong>5,35 m</strong><span>régua emergencial · Cais Mauá</span></div><div><span>O mesmo pico corresponde a</span><strong>4,17 m</strong><span>estação 87450020 · referencial corrigido ao nível médio do mar</span></div><p>A diferença de 1,18 m entre os dois referenciais é usada nesta tela para converter as leituras da ANA para a régua, a mesma escala da Tela 1. <a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">Explicação ANA/SGB</a> · consulta em 09/11/2026.</p></div>
       <div class="ana-charts">
         <article class="ana-chart ana-main"><h3>Nível observado</h3><p>Leituras ao longo do período; lacunas permanecem vazias.</p><svg id="ana-series" viewBox="0 0 720 250" role="img" aria-label="Série temporal do nível observado"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
         <article class="ana-chart"><h3>Faixa diária</h3><p>Menor e maior nível com medição em cada dia.</p><svg id="ana-range" viewBox="0 0 520 230" role="img" aria-label="Faixa diária de níveis mínimo e máximo"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
         <article class="ana-chart"><h3>Completude diária</h3><p>Percentual de horários com medição de nível.</p><svg id="ana-completeness" viewBox="0 0 520 230" role="img" aria-label="Completude diária das medições"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
       </div>
       <p class="ana-note" id="ana-note">Carregando série histórica...</p>
-      <div class="relation"><div><p class="eyebrow">LIGAÇÃO COM A TELA 1 · ENCHENTE DE 2024</p><h3>Observação e simulação</h3><p>O pico medido pela ANA e os cenários INCT descrevem análises diferentes do mesmo tema. Os referenciais ainda não foram equiparados; seus valores não são comparados numericamente.</p></div><div class="relation-values"><div><small>ANA · PICO OBSERVADO</small><strong id="ana-event-peak">—</strong><span>referencial corrigido · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></span></div><div><small>INCT · CENÁRIOS 5,3 E 5,4 M</small><strong id="inct-event-impact">—</strong><span>população estimada · <a href="/api/metadata" target="_blank" rel="noopener noreferrer">JSON do projeto</a> · data não documentada</span></div></div></div>
+      <div class="relation"><div><p class="eyebrow">LIGAÇÃO COM A TELA 1</p><h3>Cenário em uso, simulação e enchente de 2024</h3><p id="relation-text">O nível do cenário, convertido para a régua, é o mesmo eixo usado pela simulação do INCT na Tela 1. A comparação com 2024 mostra o pico observado no mesmo eixo.</p></div><div class="relation-values"><div><small>CENÁRIO EM USO</small><strong id="relation-level">—</strong><span id="relation-impact">simulação INCT</span></div><div><small>RECORDE OBSERVADO · 2024</small><strong>5,35 m</strong><span id="relation-record">régua · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">ANA</a> · INCT entre 5,3 e 5,4 m: <b id="inct-event-impact">—</b> pessoas</span></div></div></div>
     </section>
-    <section class="forecast-status" aria-labelledby="forecast-title"><div><p class="eyebrow">PRÓXIMOS DIAS</p><h2 id="forecast-title">Previsão do nível</h2><p>Ainda não há uma série oficial de níveis futuros, acessível e validada, integrada ao projeto. O painel não extrapola a última leitura nem emite alertas por bairro sem conferir o referencial da previsão com o do INCT.</p></div><small>Fonte investigada: <a href="https://sace.sgb.gov.br/guaiba/" target="_blank" rel="noopener noreferrer">SACE/SAH Guaíba · SGB</a>. Verificação em 10/11/2026; o serviço não retornou boletim atual utilizável. <a href="https://www.sgb.gov.br/w/boletim-de-alerta-hidrologico-da-bacia-do-guaiba-monitoramento-segue-com-atualizacao-diaria-das-previsoes" target="_blank" rel="noopener noreferrer">Sobre os boletins de previsão</a>.</small></section>
-    <section class="impact-section" aria-labelledby="impact-title">
-      <div class="section-head"><div><p class="eyebrow">SIMULAÇÃO INCT · MAPA TEMÁTICO</p><h2 id="impact-title">Impacto estimado por bairro</h2><p>A cor representa a porcentagem de prédios afetados em cada bairro, segundo o cenário INCT.</p></div><div class="impact-control"><label for="impact-level">Nível escolhido <strong id="impact-level-value">5,3 m</strong></label><input id="impact-level" type="range" min="3" max="10" step="0.1" value="5.3" /></div></div>
-      <div class="impact-layout"><div id="impact-map" role="img" aria-label="Mapa temático dos bairros por porcentagem de prédios afetados"></div><aside class="impact-side"><h3 id="impact-summary">Carregando bairros...</h3><p id="impact-selected">Toque em um bairro no mapa para ver seus valores.</p><div class="impact-legend"><span>0%</span><i></i><span>100%</span></div><p class="impact-caveat">Os polígonos mostram <strong>limites dos bairros</strong>. A cor resume a porcentagem do bairro; não indica quais ruas, imóveis ou partes do bairro estão alagados.</p><small>Percentuais: <a href="/api/metadata" target="_blank" rel="noopener noreferrer">JSON INCT fornecido ao projeto</a>, data de recebimento não documentada.<br>Limites: <a href="https://prefeitura.poa.br/smpg/observapoa/mapas" target="_blank" rel="noopener noreferrer">Prefeitura de Porto Alegre</a>, coleta <time id="impact-collected">—</time>.</small></aside></div>
-    </section>
-    <section class="terrain-section" aria-labelledby="terrain-title">
-      <div class="section-head"><div><p class="eyebrow">VISUALIZAÇÃO HISTÓRICA EXPLORATÓRIA</p><h2 id="terrain-title">Relevo e água em 3D</h2><p>Explore duas regiões do centro. Azul indica a profundidade modelada para 06/05/2024 sobre o relevo.</p></div><label class="terrain-select">Região<select id="terrain-region"><option value="cais">Cais Mauá</option><option value="usina">Usina do Gasômetro</option></select></label></div>
-      <div class="terrain-layout"><div class="terrain-view"><canvas id="terrain-canvas" aria-label="Visualização tridimensional do relevo e da profundidade histórica modelada"></canvas><span id="terrain-status">Carregando relevo...</span></div><aside class="terrain-controls"><label>Rotação <input id="terrain-angle" type="range" min="0" max="360" value="40" /></label><label>Exagero vertical <input id="terrain-exaggeration" type="range" min="1" max="5" step="0.5" value="2" /></label><label class="terrain-toggle"><input id="terrain-water" type="checkbox" checked /> Mostrar água modelada</label><p id="terrain-metrics">—</p><p class="impact-caveat">Sobreposição ilustrativa de dois modelos espaciais. O relevo e a profundidade têm origens e resoluções distintas; a imagem não é uma simulação hidráulica validada nem indica condições atuais.</p><small>Relevo: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Mapzen Terrain Tiles no AWS Open Data</a>. Profundidade: <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a>. Coleta <time id="terrain-collected">—</time>.</small></aside></div>
-    </section>
-    <div class="section-head route-section-head"><div><p class="eyebrow">PROTÓTIPO HISTÓRICO</p><h2>Rotas entre dois pontos</h2><p>Escolha A e B no mapa. O cálculo usa ruas do OpenStreetMap e profundidade modelada da enchente de 06/05/2024.</p></div><span class="scenario">A pé · centro de Porto Alegre</span></div>
-    <div class="workspace">
-      <section class="map-panel" aria-label="Mapa de rotas"><div id="route-map" role="application" aria-label="Mapa para selecionar origem e destino"></div><div class="legend"><span><i class="water-area"></i>Mancha estimada de 06/05</span><span><i class="dry"></i>Rua sem água estimada</span><span><i class="flood"></i>Trecho com água estimada</span><span><i class="unknown"></i>Profundidade desconhecida</span><span><i class="normal-path"></i>Sem alagamento (hipótese)</span><span><i class="path"></i>Rota de 06/05</span></div></section>
-      <aside class="controls">
-        <h2>Traçar rota</h2>
-        <p id="instruction">Clique sobre uma linha de rua para marcar a origem A.</p>
-        <div class="point"><span class="point-letter">A</span><div><small>ORIGEM</small><strong id="origin-label">Não escolhida</strong></div></div>
-        <div class="point"><span class="point-letter destination-letter">B</span><div><small>DESTINO</small><strong id="destination-label">Não escolhido</strong></div></div>
-        <div class="examples"><button id="example-detour" type="button">Exemplo de desvio</button><button id="example-flooded" type="button">Origem alagada</button></div>
-        <button id="clear-route" type="button">Escolher outros pontos</button>
-        <div id="route-result" class="route-result" role="status" aria-live="polite">Aguardando origem e destino.</div>
-        <p class="limit">Protótipo histórico para estudo. A profundidade é modelada; o mapa não considera bloqueios, correnteza, pontes sem cota ou condições atuais das vias. Uma rota de menor exposição não é uma indicação de segurança.</p>
-        <div class="sources"><strong>Fontes</strong><a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194 · profundidade estimada de 06/05/2024</a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap · rede de ruas</a><small id="collection-date">Carregando data de coleta...</small></div>
-      </aside>
-    </div>
   </main>
+  <div id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

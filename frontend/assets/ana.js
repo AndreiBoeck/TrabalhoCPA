@@ -17,8 +17,10 @@ function drawSeries(rows, days) {
   const valid = rows.filter((row) => row[1] !== null);
   if (!valid.length) { svg.innerHTML = '<text x="40" y="100" fill="#80949b">Sem medição no período.</text>'; return; }
   const left = 50, right = 704, top = 18, bottom = 211;
-  const low = Math.floor(Math.min(...valid.map((row) => row[1])) * 2) / 2;
-  const high = Math.ceil(Math.max(...valid.map((row) => row[1])) * 2) / 2 + .1;
+  const selected = Scenario.levelMsl();
+  const extra = selected == null ? [] : [selected];
+  const low = Math.floor(Math.min(...valid.map((row) => row[1]), ...extra) * 2) / 2;
+  const high = Math.ceil(Math.max(...valid.map((row) => row[1]), ...extra) * 2) / 2 + .1;
   const x = (index) => left + index / Math.max(1, rows.length - 1) * (right - left);
   const y = (level) => bottom - (level - low) / (high - low) * (bottom - top);
   let previous = false;
@@ -30,7 +32,7 @@ function drawSeries(rows, days) {
   }).join(" ");
   const peak = valid.reduce((best, row) => row[1] > best[1] ? row : best);
   const peakIndex = rows.indexOf(peak);
-  svg.innerHTML = `${axis(720, 250, left, right, top, bottom, low, high, " m")}<path d="${path}" fill="none" stroke="#267f98" stroke-width="2"/><circle cx="${x(peakIndex)}" cy="${y(peak[1])}" r="5" fill="#b85f43" stroke="white" stroke-width="1.5"/><text x="${Math.max(left + 3, Math.min(right - 75, x(peakIndex) + 8))}" y="${Math.max(15, y(peak[1]) - 7)}" font-size="10" fill="#a7553c">pico ${anaNumber(peak[1], 2)} m</text><text x="${left}" y="237" font-size="10" fill="#81969c">${shortDate(days[0].date)}</text><text x="${right}" y="237" text-anchor="end" font-size="10" fill="#81969c">${shortDate(days[days.length - 1].date)}</text>`;
+  svg.innerHTML = `${axis(720, 250, left, right, top, bottom, low, high, " m")}<path d="${path}" fill="none" stroke="#267f98" stroke-width="2"/><circle cx="${x(peakIndex)}" cy="${y(peak[1])}" r="5" fill="#b85f43" stroke="white" stroke-width="1.5"/><text x="${Math.max(left + 3, Math.min(right - 75, x(peakIndex) + 8))}" y="${Math.max(15, y(peak[1]) - 7)}" font-size="10" fill="#a7553c">pico ${anaNumber(peak[1], 2)} m</text>${selected == null ? "" : `<line x1="${left}" x2="${right}" y1="${y(selected)}" y2="${y(selected)}" stroke="#155f86" stroke-width="1.5" stroke-dasharray="4 4"/><text x="${right - 4}" y="${y(selected) - 6}" text-anchor="end" font-size="10" fill="#155f86">cenário em uso: ${anaNumber(selected, 2)} m (${anaNumber(Scenario.state.level, 2)} m na régua)</text>`}<text x="${left}" y="237" font-size="10" fill="#81969c">${shortDate(days[0].date)}</text><text x="${right}" y="237" text-anchor="end" font-size="10" fill="#81969c">${shortDate(days[days.length - 1].date)}</text>`;
   svg.setAttribute("aria-label", `Nível observado entre ${days[0].date} e ${days[days.length - 1].date}; pico de ${anaNumber(peak[1], 2)} metros. Lacunas não interpoladas.`);
 }
 
@@ -100,9 +102,6 @@ async function startAna() {
     anaById("date-start").value = first;
     anaById("date-end").value = last;
     document.querySelectorAll(".ana-collected").forEach((element) => { element.textContent = collected.slice(0, 10).split("-").reverse().join("/"); });
-    const valid = anaData.observations.filter((row) => row[1] !== null);
-    const eventPeak = valid.reduce((best, row) => row[1] > best[1] ? row : best);
-    anaById("ana-event-peak").textContent = `${anaNumber(eventPeak[1], 2)} m`;
     renderAna();
     const [low, high] = await Promise.all([fetch("/api/scenario?level=5.3"), fetch("/api/scenario?level=5.4")]);
     if (low.ok && high.ok) {
@@ -113,30 +112,15 @@ async function startAna() {
 }
 startAna();
 
-async function updateCurrentLevel() {
-  const card = document.querySelector(".current-level");
-  try {
-    const response = await fetch("/api/ana/latest");
-    if (!response.ok) throw new Error("Consulta indisponível");
-    const data = await response.json();
-    card.classList.toggle("stale", data.status !== "recent");
-    anaById("current-level-query").textContent = new Date(data.queried_at).toLocaleString("pt-BR");
-    if (data.status === "recent") {
-      anaById("current-level-value").textContent = `${anaNumber(data.level_m, 2)} m`;
-      anaById("current-level-time").textContent = `Medição: ${data.measurement_at.replace("T", " ")} · estação ${data.station_code}`;
-      anaById("current-level-status").textContent = "Leitura recente · horário da fonte sem fuso explícito.";
-    } else {
-      anaById("current-level-value").textContent = "Sem dado recente";
-      anaById("current-level-time").textContent = data.measurement_at ? `Última medição: ${data.measurement_at.replace("T", " ")} · estação ${data.station_code}` : `Estação ${data.station_code} · Usina do Gasômetro`;
-      anaById("current-level-status").textContent = "O último valor não foi usado como nível atual.";
+Scenario.subscribe((state, kind) => {
+  if (kind === "level" || kind === "init") {
+    renderAna();
+    const level = document.getElementById("relation-level");
+    if (level) level.textContent = state.level == null ? "—" : `${anaNumber(state.level, 2)} m`;
+    const text = document.getElementById("relation-text");
+    if (text && state.level != null) {
+      const diff = state.level - 5.35;
+      text.textContent = `O cenário em uso (${state.label.toLowerCase()}) está ${anaNumber(Math.abs(diff), 2)} m ${diff < 0 ? "abaixo" : "acima"} do recorde de 2024. Na régua, a mesma escala da Tela 1, o INCT estima o impacto ao lado.`;
     }
-  } catch (error) {
-    card.classList.add("stale");
-    anaById("current-level-value").textContent = "Sem dado recente";
-    anaById("current-level-time").textContent = "Estação 87450020 · Usina do Gasômetro";
-    anaById("current-level-query").textContent = "—";
-    anaById("current-level-status").textContent = "Não foi possível consultar a ANA.";
   }
-}
-updateCurrentLevel();
-setInterval(updateCurrentLevel, 300000);
+});

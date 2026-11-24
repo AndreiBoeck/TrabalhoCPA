@@ -1,8 +1,11 @@
 const $ = (id) => document.getElementById(id);
-const map = L.map("route-map", { preferCanvas: true }).setView([-30.030, -51.230], 15);
+const map = L.map("route-map", { preferCanvas: true, scrollWheelZoom: false }).setView([-30.030, -51.230], 15);
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }).addTo(map);
 const roads = L.layerGroup().addTo(map);
 new ResizeObserver(() => map.invalidateSize()).observe($("route-map"));
+window.addEventListener("maptab", (event) => { if (event.detail === "route") setTimeout(() => map.invalidateSize(), 0); });
+let observedLayer = null, networkLevel = undefined, networkRequest = 0;
+const routeLevel = () => Scenario.state.level == null ? null : Math.round(Math.min(12, Math.max(0, Scenario.state.level)) * 10) / 10;
 let origin = null, destination = null, originMarker = null, destinationMarker = null, routeLine = null, normalLine = null, requestSerial = 0;
 
 function coordinates(point) { return `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`; }
@@ -27,7 +30,7 @@ async function calculate() {
   const request = ++requestSerial;
   setResult("Calculando rota...");
   try {
-    const response = await fetch("/api/routing/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: { lat: origin.lat, lon: origin.lng }, destination: { lat: destination.lat, lon: destination.lng } }) });
+    const response = await fetch("/api/routing/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: { lat: origin.lat, lon: origin.lng }, destination: { lat: destination.lat, lon: destination.lng }, level_regua_m: routeLevel() }) });
     if (!response.ok) throw new Error(`Falha ao calcular (${response.status})`);
     const result = await response.json();
     if (request !== requestSerial) return;
@@ -36,6 +39,9 @@ async function calculate() {
       setResult(`<strong>Sem rota verificada</strong>${messages[result.reason] || "Não foi possível traçar um caminho."}`, true);
       return;
     }
+    if (routeLine) map.removeLayer(routeLine);
+    if (normalLine) map.removeLayer(normalLine);
+    routeLine = normalLine = null;
     if (result.normal_route) normalLine = L.polyline(result.normal_route.coordinates, { color: "#5a6a71", weight: 5, opacity: .85, dashArray: "8 7" }).addTo(map);
     routeLine = L.polyline(result.coordinates, { color: "#176aab", weight: 6, opacity: .95 }).addTo(map);
     map.fitBounds(routeLine.getBounds().pad(.2));
@@ -43,7 +49,8 @@ async function calculate() {
     const depth = result.max_depth_m.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     const wet = result.route_type === "minimum_exposure";
     const baseline = result.normal_route ? `<br>Sem alagamento (hipótese): ${(result.normal_route.length_m / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} km. Desvio: +${Math.max(0, Math.round(result.length_m - result.normal_route.length_m))} m.` : "";
-    setResult(`<strong>${wet ? "Saída de menor exposição estimada" : "Caminho seco mais curto"}</strong>${km} km pela rede de ruas.${baseline}${wet ? `<br>Maior profundidade estimada após a origem: ${depth} m. Trecho na água: ${Math.round(result.flooded_length_m)} m.<br><b>Cenário histórico; não indica passagem segura hoje.</b>` : "<br>Nenhum trecho alagado na rota."}<br><small>Os pontos foram ajustados à rua mais próxima (${result.snapped.origin.distance_m} m e ${result.snapped.destination.distance_m} m).</small>`);
+    const levelText = routeLevel() == null ? "" : `<br><small>Cenário: ${fmt(routeLevel(), 1)} m na régua.</small>`;
+    setResult(`<strong>${wet ? "Saída de menor exposição estimada" : "Caminho seco mais curto"}</strong>${km} km pela rede de ruas.${baseline}${wet ? `<br>Maior profundidade estimada após a origem: ${depth} m. Trecho na água: ${Math.round(result.flooded_length_m)} m.<br><b>Estimativa de modelo; não indica passagem segura.</b>` : "<br>Nenhum trecho alagado na rota."}<br><small>Os pontos foram ajustados à rua mais próxima (${result.snapped.origin.distance_m} m e ${result.snapped.destination.distance_m} m).</small>${levelText}`);
   } catch (error) { if (request === requestSerial) setResult(`<strong>Erro</strong>${error.message}`, true); }
 }
 map.on("click", (event) => {
@@ -77,25 +84,47 @@ function showExample(start, end) {
 $("example-detour").addEventListener("click", () => showExample([-30.0273335, -51.227312], [-30.0297283, -51.2277399]));
 $("example-flooded").addEventListener("click", () => showExample([-30.02637925, -51.2269302], [-30.03048905, -51.2339254]));
 
-async function start() {
+function drawNetwork(network) {
+  roads.clearLayers();
+  const nodes = new Map(network.nodes.map((node) => [node.id, node]));
+  let wetCount = 0;
+  network.edges.forEach((edge) => {
+    const a = nodes.get(edge.source), b = nodes.get(edge.target);
+    if (!a || !b) return;
+    const wet = edge.depth_m !== null && edge.depth_m > 0;
+    if (wet) wetCount++;
+    L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color: edge.depth_m === null ? "#9ca8ad" : wet ? "#d86b56" : "#9cb5bb", weight: wet ? 4 : 2, opacity: wet ? .85 : .6, dashArray: edge.depth_m === null ? "4 4" : null, interactive: false }).addTo(roads);
+  });
+  $("kpi-streets").textContent = `${fmtInt(wetCount)} de ${fmtInt(network.edges.length)}`;
+}
+
+async function loadNetwork() {
+  const level = routeLevel();
+  if (level === networkLevel) return;
+  networkLevel = level;
+  const serial = ++networkRequest;
   try {
-    const response = await fetch("/api/routing/network");
+    const response = await fetch(level == null ? "/api/routing/network?level=0" : `/api/routing/network?level=${level}`);
     if (!response.ok) throw new Error(`Rede indisponível (${response.status})`);
     const network = await response.json();
-    const nodes = new Map(network.nodes.map((node) => [node.id, node]));
-    if (network.flood_extent) {
-      L.geoJSON(network.flood_extent, { style: { color: "#5598b2", weight: 1, fillColor: "#58a5c8", fillOpacity: .28 }, interactive: false }).addTo(map);
+    if (serial !== networkRequest) return;
+    drawNetwork(network);
+    if (!observedLayer && network.flood_extent) {
+      observedLayer = L.geoJSON(network.flood_extent, { style: { color: "#5598b2", weight: 1, fillColor: "#58a5c8", fillOpacity: .28 }, interactive: false });
+      const bbox = network.metadata.bbox;
+      map.invalidateSize();
+      map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+      $("collection-date").textContent = `Ruas e mancha coletadas em ${new Date(network.metadata.collected_at_utc).toLocaleDateString("pt-BR")}. Área: centro de Porto Alegre.`;
     }
-    network.edges.forEach((edge) => {
-      const a = nodes.get(edge.source), b = nodes.get(edge.target);
-      if (!a || !b) return;
-      const wet = edge.depth_m !== null && edge.depth_m > 0;
-      L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color: edge.depth_m === null ? "#9ca8ad" : wet ? "#d86b56" : "#9cb5bb", weight: wet ? 4 : 2, opacity: wet ? .8 : .6, dashArray: edge.depth_m === null ? "4 4" : null, interactive: false }).addTo(roads);
-    });
-    const bbox = network.metadata.bbox;
-    map.invalidateSize();
-    map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
-    $("collection-date").textContent = `Dados coletados em ${new Date(network.metadata.collected_at_utc).toLocaleString("pt-BR")}. Área: centro de Porto Alegre.`;
+    if (origin && destination) calculate();
   } catch (error) { setResult(`<strong>Mapa indisponível</strong>${error.message}`, true); }
 }
-start();
+
+$("show-observed").addEventListener("change", (event) => {
+  if (!observedLayer) return;
+  if (event.target.checked) observedLayer.addTo(map); else map.removeLayer(observedLayer);
+});
+let networkTimer;
+Scenario.subscribe((state, kind) => {
+  if (kind === "init" || kind === "level") { clearTimeout(networkTimer); networkTimer = setTimeout(loadNetwork, 150); }
+});
