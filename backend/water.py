@@ -131,32 +131,6 @@ def overlay_png(bbox: tuple[float, float, float, float], level_regua: float) -> 
     return _png(rgba)
 
 
-@lru_cache(maxsize=4)
-def square_grid(bbox: tuple[float, float, float, float], size_cells: int = 10, quantiles: int = 20) -> list[dict]:
-    """Quadrados de ``size_cells`` × 20 m sobre o recorte. Cada um guarda os cantos em lat/lon e as cotas
-    (régua) em que 5%, 10%, ..., 100% da sua área de terra passam a ter água, para o navegador encher o
-    quadrado em qualquer nível sem pedir nada ao servidor. ``None`` = a água do lago não chega."""
-    m = model()
-    rows, cols, _ = grid_window(bbox)
-    r0, c0 = rows.start - rows.start % size_cells, cols.start - cols.start % size_cells
-    squares = []
-    probs = np.linspace(100 / quantiles, 100, quantiles)
-    for r in range(r0, rows.stop, size_cells):
-        for c in range(c0, cols.stop, size_cells):
-            spill = m["spill"][r:r + size_cells, c:c + size_cells]
-            land = ~m["lake"][r:r + size_cells, c:c + size_cells] & m["poa"][r:r + size_cells, c:c + size_cells]
-            if land.sum() < size_cells * size_cells * .25:
-                continue  # quadrado quase todo no lago ou fora de Porto Alegre
-            values = np.where(spill[land] >= 99, np.inf, spill[land] + REGUA_OFFSET)
-            q = np.percentile(values, probs, method="higher")
-            x0, y0 = m["x_min"] + c * m["cell"], m["y_max"] - r * m["cell"]
-            x1, y1 = x0 + size_cells * m["cell"], y0 - size_cells * m["cell"]
-            lons, lats = _TO_GEO.transform([x0, x1, x1, x0], [y1, y1, y0, y0])  # SO, SE, NE, NO
-            squares.append({"corners": [[round(a, 6), round(b, 6)] for a, b in zip(lats, lons)],
-                            "q": [None if not np.isfinite(v) else round(float(v), 2) for v in q]})
-    return squares
-
-
 _EDGE_SAMPLES: dict[int, list] = {}
 
 

@@ -145,7 +145,6 @@ def streets() -> dict:
     raw = net["raw"]
     _, _, bounds = water.grid_window(tuple(raw["metadata"]["bbox"]))
     return {"metadata": raw["metadata"], "overlay_bounds": bounds, "flood_extent": raw["flood_extent"],
-            "squares": water.square_grid(tuple(raw["metadata"]["bbox"])), "square_size_m": 200,
             "edges": [{"coords": e["coords"], "name": e["name"], "bridge": e["bridge"]} for e in net["edges"]],
             "total_length_m": round(float(net["length"].sum()))}
 

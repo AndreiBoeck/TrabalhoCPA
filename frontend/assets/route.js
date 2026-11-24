@@ -13,7 +13,7 @@ const BANDS = [
 ];
 const R = {
   streets: null, depths: null, level: undefined, mode: "exit", areaBounds: null,
-  gridOutline: null, gridFills: [], playing: null, observed: null, bandLayers: [], unknownLayer: null, area: null,
+  overlay: null, observed: null, bandLayers: [], unknownLayer: null, area: null,
   route: [], markers: [], a: null, b: null, serial: 0, depthSerial: 0, routeBounds: null,
 };
 const routeLevel = () => Scenario.state.level == null ? null : Math.round(Math.min(12, Math.max(0, Scenario.state.level)) * 100) / 100;
@@ -77,6 +77,7 @@ async function loadDepths() {
   R.level = level;
   if (level == null) { setResult("Escolha um nível no controle acima para ver a água nas ruas.", "unavailable"); return; }
   const serial = ++R.depthSerial;
+  R.overlay.setUrl(`/api/water/overlay.png?level=${level}`);
   try {
     const response = await fetch(`/api/routing/depths?level=${level}`);
     if (!response.ok) throw new Error();
@@ -93,58 +94,6 @@ async function loadDepths() {
     calculate();
   } catch { setResult("<strong>Ruas indisponíveis</strong>Não foi possível calcular a água nas ruas agora.", "unavailable"); }
 }
-
-// Grade de quadrados de 200 m: cada quadrado "enche" de baixo para cima com a fração da sua área de terra
-// que tem água no nível. As cotas por quadrado vêm do servidor, então o enchimento é instantâneo.
-const FILL_BANDS = [
-  { max: .25, color: "#a9d6ea" }, { max: .5, color: "#6cb4dc" }, { max: .75, color: "#3a8cc6" }, { max: 1.01, color: "#1c5e9e" },
-];
-function squareFraction(q, level) {
-  let n = 0;
-  for (const v of q) if (v !== null && v < level) n++;
-  return n / q.length;
-}
-function drawGrid() {
-  if (!R.streets) return;
-  R.gridFills.forEach((layer) => map.removeLayer(layer));
-  const level = Scenario.state.level;
-  const groups = FILL_BANDS.map(() => []);
-  if (level != null) R.streets.squares.forEach((sq) => {
-    const f = squareFraction(sq.q, level);
-    if (f <= 0) return;
-    const [sw, se, ne, nw] = sq.corners;
-    const up = (a, b) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
-    groups[FILL_BANDS.findIndex((band) => f < band.max)].push([sw, se, up(se, ne), up(sw, nw)]);
-  });
-  R.gridFills = groups.map((polys, i) => L.polygon(polys, { stroke: false, fillColor: FILL_BANDS[i].color, fillOpacity: .5, interactive: false }).addTo(map));
-  R.gridFills.forEach((layer) => layer.bringToBack());
-  if (R.observed && map.hasLayer(R.observed)) R.observed.bringToFront();
-  R.bandLayers.forEach((layer) => layer.bringToFront());
-  R.unknownLayer?.bringToFront();
-  R.route.forEach((layer) => layer.bringToFront());
-  const badge = $("play-level");
-  if (badge) badge.textContent = level == null ? "" : `${fmt(level)} m`;
-}
-
-function stopPlay() {
-  clearInterval(R.playing);
-  R.playing = null;
-  $("play-water").textContent = "▶ Ver a água subir";
-  $("play-level").hidden = true;
-}
-$("play-water").addEventListener("click", () => {
-  if (R.playing) { stopPlay(); return; }
-  let level = 2.4;
-  if (paneVisible() && R.areaBounds) map.fitBounds(R.areaBounds);
-  $("play-water").textContent = "■ Parar";
-  $("play-level").hidden = false;
-  R.playing = setInterval(() => {
-    level = Math.round((level + .1) * 100) / 100;
-    if (level >= 5.35) level = 5.35;
-    Scenario.setLevel(level, level === 5.35 ? { label: "Recorde de 05/05/2024 (5,35 m na régua)", source: "record" } : { label: "Animação da subida do rio" });
-    if (level === 5.35) { stopPlay(); R.routeBounds = null; setTimeout(frame, 600); }
-  }, 220);
-});
 
 const MESSAGES = {
   point_too_far_from_network: "O ponto está fora da área das rotas (Centro, 4º Distrito, Menino Deus e Cidade Baixa) ou longe de uma rua. Use um dos exemplos abaixo ou clique numa rua.",
@@ -247,8 +196,7 @@ async function start() {
     const [w, s, e, n] = R.streets.metadata.bbox;
     R.areaBounds = L.latLngBounds([s, w], [n, e]);
     R.area = L.rectangle(R.areaBounds, { color: "#c0703f", weight: 1.5, dashArray: "6 5", fill: false, interactive: false }).addTo(map);
-    R.gridOutline = L.polygon(R.streets.squares.map((sq) => sq.corners), { color: "#8fb0b8", weight: .6, opacity: .45, fill: false, interactive: false }).addTo(map);
-    drawGrid();
+    R.overlay = L.imageOverlay("data:image/gif;base64,R0lGODlhAQABAAAAACw=", R.streets.overlay_bounds, { opacity: 1, interactive: false }).addTo(map);
     R.observed = L.geoJSON(R.streets.flood_extent, { style: { color: "#3d6fb0", weight: 1, dashArray: "4 3", fillColor: "#3d6fb0", fillOpacity: .12 }, interactive: false });
     $("collection-date").insertAdjacentHTML("afterbegin", `Ruas coletadas em ${new Date(R.streets.metadata.collected_at_utc).toLocaleDateString("pt-BR")} (${fmtInt(R.streets.edges.length)} trechos, ${fmtInt(Math.round(R.streets.total_length_m / 1000))} km). `);
     drawStreets();
@@ -260,7 +208,7 @@ async function start() {
 let depthTimer;
 Scenario.subscribe((state, kind) => {
   if (kind === "init") return;
-  if (kind === "level") { drawGrid(); clearTimeout(depthTimer); depthTimer = setTimeout(loadDepths, 200); }
+  if (kind === "level") { clearTimeout(depthTimer); depthTimer = setTimeout(loadDepths, 200); }
   if (kind === "point" && R.mode === "exit") { R.routeBounds = null; calculate(); frame(); }
 });
 start();
