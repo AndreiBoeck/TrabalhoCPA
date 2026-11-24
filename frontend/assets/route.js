@@ -3,7 +3,14 @@ const map = L.map("route-map", { preferCanvas: true, scrollWheelZoom: false }).s
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }).addTo(map);
 const roads = L.layerGroup().addTo(map);
 new ResizeObserver(() => map.invalidateSize()).observe($("route-map"));
-window.addEventListener("maptab", (event) => { if (event.detail === "route") setTimeout(() => map.invalidateSize(), 0); });
+let routeBounds = null;
+function frameRouteMap() {
+  // Enquadra a área do centro (ou a rota traçada). Só funciona com a aba visível, quando o mapa tem tamanho.
+  map.invalidateSize();
+  if (routeLine) map.fitBounds(routeLine.getBounds().pad(.2));
+  else if (routeBounds) map.fitBounds(routeBounds);
+}
+window.addEventListener("maptab", (event) => { if (event.detail === "route") setTimeout(frameRouteMap, 0); });
 let observedLayer = null, networkLevel = undefined, networkRequest = 0;
 const routeLevel = () => Scenario.state.level == null ? null : Math.round(Math.min(12, Math.max(0, Scenario.state.level)) * 10) / 10;
 let origin = null, destination = null, originMarker = null, destinationMarker = null, routeLine = null, normalLine = null, requestSerial = 0;
@@ -44,7 +51,7 @@ async function calculate() {
     routeLine = normalLine = null;
     if (result.normal_route) normalLine = L.polyline(result.normal_route.coordinates, { color: "#5a6a71", weight: 5, opacity: .85, dashArray: "8 7" }).addTo(map);
     routeLine = L.polyline(result.coordinates, { color: "#176aab", weight: 6, opacity: .95 }).addTo(map);
-    map.fitBounds(routeLine.getBounds().pad(.2));
+    if (!document.getElementById("pane-route").hidden) map.fitBounds(routeLine.getBounds().pad(.2));
     const km = (result.length_m / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     const depth = result.max_depth_m.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     const wet = result.route_type === "minimum_exposure";
@@ -112,8 +119,8 @@ async function loadNetwork() {
     if (!observedLayer && network.flood_extent) {
       observedLayer = L.geoJSON(network.flood_extent, { style: { color: "#5598b2", weight: 1, fillColor: "#58a5c8", fillOpacity: .28 }, interactive: false });
       const bbox = network.metadata.bbox;
-      map.invalidateSize();
-      map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+      routeBounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+      if (!document.getElementById("pane-route").hidden) frameRouteMap();
       $("collection-date").textContent = `Ruas e mancha coletadas em ${new Date(network.metadata.collected_at_utc).toLocaleDateString("pt-BR")}. Área: centro de Porto Alegre.`;
     }
     if (origin && destination) calculate();
