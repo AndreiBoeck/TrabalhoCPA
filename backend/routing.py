@@ -28,19 +28,96 @@ class Edge(BaseModel):
 
 
 class RouteRequest(BaseModel):
-    nodes: List[Node] = Field(min_length=1, max_length=10000)
-    edges: List[Edge] = Field(max_length=30000)
+    nodes: List[Node] = Field(min_length=1, max_length=20000)
+    edges: List[Edge] = Field(max_length=40000)
     origin: str
     destination: str
 
 
-def calculate_route(request: RouteRequest) -> dict:
-    """Retorna o caminho seco mais curto ou, da origem alagada, a menor exposição.
+def best_exit(depths, neighbors, origin, goals) -> dict:
+    """Busca em grafo genérico: caminho seco mais curto ou, da origem alagada, a menor exposição.
 
-    Na origem alagada, compara caminhos por (maior profundidade depois da
-    origem, distância na água, distância total). Após sair da água, não permite
-    voltar a trechos alagados. Profundidade desconhecida nunca é atravessada.
+    ``depths[n]`` é a profundidade no nó; ``neighbors(n)`` devolve (destino, comprimento,
+    profundidade do trecho ou None, referência do trecho). ``goals`` é o conjunto de destinos
+    aceitos (o primeiro alcançado vence). Compara caminhos por (maior profundidade depois da
+    origem, distância na água, distância total). Após sair da água, não permite voltar a trechos
+    alagados. Profundidade desconhecida (None) nunca é atravessada.
     """
+    flooded_origin = depths[origin] > 0
+    start = (origin, not flooded_origin)
+
+    def expand(state):
+        current, dry = state
+        for target, length, edge_depth, ref in neighbors(current):
+            if edge_depth is None or depths[target] is None:
+                continue
+            water_depth = max(edge_depth, depths[target])
+            if dry and water_depth > 0:
+                continue
+            yield (target, dry or depths[target] == 0), length, water_depth, ref
+
+    is_goal = lambda state: state[1] and state[0] in goals
+    # Primeiro encontra a menor profundidade máxima possível. Uma única busca
+    # lexicográfica não basta: um gargalo futuro pode empatar dois máximos antes
+    # distintos e inverter a preferência pela distância na água.
+    minimum_max = {start: 0.0}
+    queue = [(0.0, 0, start)]
+    counter = 0
+    depth_limit = None
+    while queue:
+        maximum, _, state = heappop(queue)
+        if maximum != minimum_max[state]:
+            continue
+        if is_goal(state):
+            depth_limit = maximum
+            break
+        for next_state, _, water_depth, _ in expand(state):
+            candidate = max(maximum, water_depth)
+            if candidate < minimum_max.get(next_state, float("inf")):
+                minimum_max[next_state] = candidate
+                counter += 1
+                heappush(queue, (candidate, counter, next_state))
+    if depth_limit is None:
+        return {"status": "no_route", "reason": "no_verified_path"}
+
+    best = {start: (0.0, 0.0)}
+    previous = {}
+    queue = [((0.0, 0.0), 0, start)]
+    while queue:
+        cost, _, state = heappop(queue)
+        if cost != best[state]:
+            continue
+        if is_goal(state):
+            path, refs = [state[0]], []
+            while state in previous:
+                state, ref = previous[state]
+                path.append(state[0])
+                refs.append(ref)
+            path.reverse()
+            refs.reverse()
+            return {
+                "status": "ok",
+                "route_type": "minimum_exposure" if flooded_origin else "shortest_dry",
+                "node_ids": path,
+                "edge_refs": refs,
+                "length_m": cost[1],
+                "flooded_length_m": cost[0],
+                "max_depth_m": depth_limit,
+            }
+        for next_state, length, water_depth, ref in expand(state):
+            if water_depth > depth_limit:
+                continue
+            next_cost = (cost[0] + (length if water_depth > 0 else 0), cost[1] + length)
+            if next_cost < best.get(next_state, (float("inf"),) * 2):
+                best[next_state] = next_cost
+                previous[next_state] = (state, ref)
+                counter += 1
+                heappush(queue, (next_cost, counter, next_state))
+    raise RuntimeError("A busca de rota perdeu um caminho alcançável")
+
+
+def calculate_route(request: RouteRequest) -> dict:
+    """Valida a rede recebida e calcula a rota entre dois nós (veja ``best_exit``)."""
     depths: Dict[str, float] = {}
     for node in request.nodes:
         if node.id in depths:
@@ -53,7 +130,7 @@ def calculate_route(request: RouteRequest) -> dict:
     if depths[request.destination] > 0:
         return {"status": "no_route", "reason": "destination_flooded"}
 
-    adjacency: Dict[str, List[Tuple[str, float, Optional[float]]]] = defaultdict(list)
+    adjacency: Dict[str, List[Tuple[str, float, Optional[float], None]]] = defaultdict(list)
     for edge in request.edges:
         if edge.source not in depths or edge.target not in depths:
             raise ValueError("Trecho referencia nó ausente")
@@ -61,71 +138,9 @@ def calculate_route(request: RouteRequest) -> dict:
             raise ValueError("Trecho inválido")
         if edge.depth_m is not None and not isfinite(edge.depth_m):
             raise ValueError("Profundidade de trecho inválida")
-        adjacency[edge.source].append((edge.target, edge.length_m, edge.depth_m))
+        adjacency[edge.source].append((edge.target, edge.length_m, edge.depth_m, None))
         if edge.bidirectional:
-            adjacency[edge.target].append((edge.source, edge.length_m, edge.depth_m))
-
-    flooded_origin = depths[request.origin] > 0
-    start = (request.origin, not flooded_origin)
-
-    def neighbors(state):
-        current, dry = state
-        for target, length, edge_depth in adjacency[current]:
-            if edge_depth is None:
-                continue
-            water_depth = max(edge_depth, depths[target])
-            if dry and water_depth > 0:
-                continue
-            yield (target, dry or depths[target] == 0), length, water_depth
-
-    goal = (request.destination, True)
-    # Primeiro encontra a menor profundidade máxima possível. Uma única busca
-    # lexicográfica não basta: um gargalo futuro pode empatar dois máximos antes
-    # distintos e inverter a preferência pela distância na água.
-    minimum_max = {start: 0.0}
-    queue = [(0.0, start)]
-    while queue:
-        maximum, state = heappop(queue)
-        if maximum != minimum_max[state]:
-            continue
-        if state == goal:
-            break
-        for next_state, _, water_depth in neighbors(state):
-            candidate = max(maximum, water_depth)
-            if candidate < minimum_max.get(next_state, float("inf")):
-                minimum_max[next_state] = candidate
-                heappush(queue, (candidate, next_state))
-    if goal not in minimum_max:
-        return {"status": "no_route", "reason": "no_verified_path"}
-
-    depth_limit = minimum_max[goal]
-    best = {start: (0.0, 0.0)}
-    previous = {}
-    queue = [((0.0, 0.0), start)]
-    while queue:
-        cost, state = heappop(queue)
-        if cost != best[state]:
-            continue
-        if state == goal:
-            path = [state[0]]
-            while state in previous:
-                state = previous[state]
-                path.append(state[0])
-            path.reverse()
-            return {
-                "status": "ok",
-                "route_type": "minimum_exposure" if flooded_origin else "shortest_dry",
-                "node_ids": path,
-                "length_m": cost[1],
-                "flooded_length_m": cost[0],
-                "max_depth_m": depth_limit,
-            }
-        for next_state, length, water_depth in neighbors(state):
-            if water_depth > depth_limit:
-                continue
-            next_cost = (cost[0] + (length if water_depth > 0 else 0), cost[1] + length)
-            if next_cost < best.get(next_state, (float("inf"),) * 2):
-                best[next_state] = next_cost
-                previous[next_state] = state
-                heappush(queue, (next_cost, next_state))
-    raise RuntimeError("A busca de rota perdeu um caminho alcançável")
+            adjacency[edge.target].append((edge.source, edge.length_m, edge.depth_m, None))
+    result = best_exit(depths, lambda node: adjacency[node], request.origin, {request.destination})
+    result.pop("edge_refs", None)
+    return result

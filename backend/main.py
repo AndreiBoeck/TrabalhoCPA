@@ -12,23 +12,24 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import requests
 
 from backend.routing import RouteRequest, calculate_route
-from backend import water
+from backend import rotas, water
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "dados" / "processados" / "inct_simai_limpo.json"
 FRONTEND = ROOT / "frontend"
-ROUTING_DATA = ROOT / "dados" / "processados" / "rotas_centro_2024_05_06.json"
 BAIRROS_DATA = ROOT / "dados" / "processados" / "bairros_poa.geojson"
 ANA_DATA = ROOT / "dados" / "processados" / "ana_guaiba_2024_limpo.csv"
 ANA_METADATA = ROOT / "dados" / "originais" / "ana_metadados_coleta.csv"
 
 app = FastAPI(title="TrabalhoCPA — INCT SiMAI", version="0.1.0")
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.mount("/assets", StaticFiles(directory=FRONTEND / "assets"), name="assets")
 
 
@@ -277,13 +278,6 @@ def routing_calculate(request: RouteRequest):
         raise HTTPException(422, str(error)) from error
 
 
-@lru_cache(maxsize=1)
-def routing_network() -> dict:
-    if not ROUTING_DATA.exists():
-        raise HTTPException(503, "Rede de rotas não preparada")
-    return json.loads(ROUTING_DATA.read_text(encoding="utf-8"))
-
-
 class MapPoint(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lon: float = Field(ge=-180, le=180)
@@ -291,101 +285,35 @@ class MapPoint(BaseModel):
 
 class MapRouteRequest(BaseModel):
     origin: MapPoint
-    destination: MapPoint
-    level_regua_m: Optional[float] = Field(default=None, ge=0, le=12)
+    destination: Optional[MapPoint] = None  # sem destino: saída até o ponto seco mais próximo
+    level_regua_m: float = Field(ge=0, le=12)
 
 
-def network_for(level: Optional[float]) -> dict:
-    """Sem nível: cenário histórico de 06/05/2024. Com nível: modelo de água por nível."""
-    return routing_network() if level is None else water.network_at_level(routing_network(), level)
+@app.get("/api/routing/streets")
+def routing_streets(response: Response):
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return rotas.streets()
 
 
-def nearest_edge(point: MapPoint, network: dict) -> dict:
-    """Projeta um clique sobre o trecho de rua mais próximo no recorte local."""
-    nodes = {node["id"]: node for node in network["nodes"]}
-    px, py = point.lon * 96_400, point.lat * 111_200
-    best = None
-    for index, edge in enumerate(network["edges"]):
-        a, b = nodes[edge["source"]], nodes[edge["target"]]
-        ax, ay = a["lon"] * 96_400, a["lat"] * 111_200
-        bx, by = b["lon"] * 96_400, b["lat"] * 111_200
-        dx, dy = bx - ax, by - ay
-        fraction = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
-        qx, qy = ax + fraction * dx, ay + fraction * dy
-        distance = ((px - qx) ** 2 + (py - qy) ** 2) ** 0.5
-        if best is None or distance < best["distance_m"]:
-            best = {"edge_index": index, "fraction": fraction, "distance_m": distance,
-                    "lat": a["lat"] + fraction * (b["lat"] - a["lat"]),
-                    "lon": a["lon"] + fraction * (b["lon"] - a["lon"]),
-                    "depth_m": edge["depth_m"]}
-    best["distance_m"] = round(best["distance_m"], 1)
-    return best
+@app.get("/api/routing/depths")
+def routing_depths(level: float = Query(ge=0, le=12)):
+    return rotas.depths_public(level)
 
 
-def attach_point(name: str, snapped: dict, network: dict, nodes: list, edges: list):
-    edge = network["edges"][snapped["edge_index"]]
-    nodes.append({"id": name, "depth_m": snapped["depth_m"]})
-    fraction = snapped["fraction"]
-    # Trechos de comprimento zero surgem quando o clique coincide com um nó.
-    # Uma ligação pequena preserva o nó virtual sem alterar a escolha da rota.
-    first = max(0.001, edge["length_m"] * fraction)
-    last = max(0.001, edge["length_m"] * (1 - fraction))
-    edges.extend([
-        {"source": edge["source"], "target": name, "length_m": first,
-         "depth_m": edge["depth_m"], "bidirectional": edge["bidirectional"]},
-        {"source": name, "target": edge["target"], "length_m": last,
-         "depth_m": edge["depth_m"], "bidirectional": edge["bidirectional"]},
-    ])
-
-
-@app.get("/api/routing/network")
-def routing_network_public(level: Optional[float] = Query(default=None, ge=0, le=12)):
-    return network_for(level)
+@app.get("/api/water/overlay.png")
+def water_overlay(level: float = Query(ge=0, le=12)):
+    bbox = tuple(rotas.network()["raw"]["metadata"]["bbox"])
+    png = water.overlay_png(bbox, round(level, 2))
+    return Response(png, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.post("/api/routing/plan")
 def routing_plan(request: MapRouteRequest):
-    network = network_for(request.level_regua_m)
-    origin = nearest_edge(request.origin, network)
-    destination = nearest_edge(request.destination, network)
-    if max(origin["distance_m"], destination["distance_m"]) > 25:
-        return {"status": "no_route", "reason": "point_too_far_from_network",
-                "max_snap_distance_m": 25, "metadata": network["metadata"]}
-    if origin["depth_m"] is None or destination["depth_m"] is None:
-        return {"status": "no_route", "reason": "unknown_depth_at_point",
-                "metadata": network["metadata"]}
-    nodes = list(network["nodes"])
-    edges = list(network["edges"])
-    attach_point("__origin__", origin, network, nodes, edges)
-    attach_point("__destination__", destination, network, nodes, edges)
-    if origin["edge_index"] == destination["edge_index"]:
-        edge = network["edges"][origin["edge_index"]]
-        if edge["bidirectional"] or origin["fraction"] <= destination["fraction"]:
-            edges.append({"source": "__origin__", "target": "__destination__",
-                          "length_m": max(.001, edge["length_m"] * abs(destination["fraction"] - origin["fraction"])),
-                          "depth_m": edge["depth_m"], "bidirectional": edge["bidirectional"]})
-    graph = RouteRequest(nodes=nodes, edges=edges, origin="__origin__", destination="__destination__")
-    result = calculate_route(graph)
-    nodes_by_id = {node["id"]: node for node in network["nodes"]}
-    nodes_by_id["__origin__"] = origin
-    nodes_by_id["__destination__"] = destination
-    if result["status"] == "ok":
-        result["coordinates"] = [[nodes_by_id[node_id]["lat"], nodes_by_id[node_id]["lon"]]
-                                 for node_id in result["node_ids"]]
-        normal_graph = RouteRequest(
-            nodes=[{"id": node.id, "depth_m": 0} for node in graph.nodes],
-            edges=[{"source": edge.source, "target": edge.target,
-                    "length_m": edge.length_m, "depth_m": 0 if edge.depth_m is not None else None,
-                    "bidirectional": edge.bidirectional} for edge in graph.edges],
-            origin=graph.origin, destination=graph.destination,
-        )
-        normal = calculate_route(normal_graph)
-        if normal["status"] == "ok":
-            result["normal_route"] = {
-                "length_m": normal["length_m"],
-                "coordinates": [[nodes_by_id[node_id]["lat"], nodes_by_id[node_id]["lon"]]
-                                for node_id in normal["node_ids"]],
-            }
-    result["snapped"] = {"origin": origin, "destination": destination}
-    result["metadata"] = network["metadata"]
+    destination = (request.destination.lat, request.destination.lon) if request.destination else None
+    result = rotas.plan((request.origin.lat, request.origin.lon), destination, request.level_regua_m)
+    for key in ("length_m", "flooded_length_m"):
+        if key in result:
+            result[key] = round(result[key])
+    if "max_depth_m" in result:
+        result["max_depth_m"] = round(result["max_depth_m"], 2)
     return result

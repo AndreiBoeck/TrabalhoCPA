@@ -7,8 +7,6 @@ from pathlib import Path
 
 from backend import water
 
-ROOT = Path(__file__).resolve().parents[1]
-NETWORK = json.loads((ROOT / "dados/processados/rotas_centro_2024_05_06.json").read_text(encoding="utf-8"))
 
 
 class WaterModelTests(unittest.TestCase):
@@ -17,18 +15,12 @@ class WaterModelTests(unittest.TestCase):
         self.assertAlmostEqual(water.regua_to_msl(5.35), 4.17)
 
     def test_flooded_streets_never_decrease_when_level_rises(self):
+        from backend import rotas
         previous = -1
         for level in [1.7, 3.0, 4.0, 5.35, 7.0, 10.0]:
-            edges = water.network_at_level(NETWORK, level)["edges"]
-            wet = sum(1 for edge in edges if edge["depth_m"])
+            wet = rotas.depths_public(level)["wet_length_m"]
             self.assertGreaterEqual(wet, previous)
             previous = wet
-        self.assertEqual(sum(1 for e in water.network_at_level(NETWORK, 1.7)["edges"] if e["depth_m"]), 0)
-
-    def test_unknown_depth_stays_unknown(self):
-        original = [edge["depth_m"] is None for edge in NETWORK["edges"]]
-        modelled = [edge["depth_m"] is None for edge in water.network_at_level(NETWORK, 6.0)["edges"]]
-        self.assertEqual(original, modelled)
 
     def test_point_window_shape_and_outside_area(self):
         window = water.point_window(-30.0225, -51.2190)

@@ -58,7 +58,7 @@ cd deploy/cloudflare && npm install && npx wrangler deploy
 
 1. **Bairros:** os [limites oficiais da Prefeitura](https://prefeitura.poa.br/smpg/observapoa/mapas) coloridos pela porcentagem de prédios afetados na simulação do INCT, no nível do cenário. Abaixo de 3,0 m o INCT não indica prédios afetados. Clicar em um bairro leva o ponto do 3D para lá.
 2. **Água no ponto · 3D:** mapa 3D ([MapLibre GL](https://maplibre.org), em `frontend/assets/vendor/maplibre/`, licença BSD-3) com o mapa base e os prédios do [OpenFreeMap](https://openfreemap.org) (dados OpenStreetMap) em altura real. A água do modelo aparece em blocos com a profundidade de cada célula de 20 m, em 2 km × 2 km em volta do ponto, de modo que os prédios ficam parcialmente submersos. Clique no mapa para escolher outro ponto; botões alternam entre 3D, vista de cima e rotação. Informa a profundidade no ponto e a partir de que nível da régua a água chega ali (`GET /api/water/point`).
-3. **Rotas a pé:** rede de ruas do centro (OpenStreetMap). A profundidade de cada trecho vem do mesmo modelo de água, no nível do cenário; a mancha observada em 06/05/2024 pode ser exibida para comparação (`POST /api/routing/plan` com `level_regua_m`).
+3. **Rotas a pé:** 922 km de ruas (14,7 mil trechos do OpenStreetMap) na área que alagou em 2024: Centro Histórico, 4º Distrito, Menino Deus e Cidade Baixa. As ruas são coloridas pela profundidade do modelo no nível do cenário (até 30 cm, 30 cm a 1 m, mais de 1 m), com a água do modelo por baixo (`GET /api/water/overlay.png`). O modo padrão, **Saída a pé**, traça a rota do ponto escolhido até o ponto seco mais próximo; o modo **De A para B** compara com o caminho sem alagamento. Abaixo do nível de alerta o mapa avisa que não há água nas ruas e oferece ver o recorde de 2024. A mancha observada em 06/05/2024 pode ser exibida para comparação (`GET /api/routing/streets`, `GET /api/routing/depths`, `POST /api/routing/plan`).
 
 **Modelo de água por nível** (`scripts/preparar_modelo_agua.py` → `dados/processados/modelo_agua_poa.npz`). Grade de 20 m sobre Porto Alegre:
 
@@ -71,18 +71,18 @@ cd deploy/cloudflare && npm install && npx wrangler deploy
 
 **Enchente de 2024.** A série ANA de maio e junho de 2024 continua com filtro de período e três gráficos (nível, faixa diária e completude); o cenário em uso aparece como linha de referência. O painel de ligação compara o cenário, a simulação INCT e o recorde de 2024 no mesmo eixo.
 
-**Cálculo de rotas.** Com origem seca, escolhe o caminho seco mais curto. Com origem alagada, minimiza primeiro a maior profundidade atravessada, depois a distância na água e, por fim, o comprimento total; ao alcançar área seca, não volta à água. Trechos sem cota (pontes) não são usados. Sem caminho verificável ou com destino alagado, a tela não recomenda rota. O protótipo é a pé e não indica passagem segura.
+**Cálculo de rotas** (`backend/rotas.py` e `backend/routing.py`). Cada trecho recebe a maior profundidade do modelo ao longo dele (amostras a cada 10 m); pontes e viadutos valem pelas cabeceiras, e amostras que caem no lago (borda da orla na grade de 20 m) são ignoradas. Com origem seca, escolhe o caminho seco mais curto. Com origem alagada, minimiza primeiro a maior profundidade atravessada, depois a distância na água e, por fim, o comprimento total; ao alcançar área seca, não volta à água. Na saída a pé, o destino é o ponto seco mais próximo em que o rio precisaria subir pelo menos mais 1 m e que esteja ligado a pelo menos 3 km de ruas secas (descarta viadutos e quarteirões altos cercados de água). O tempo considera 4,5 km/h em área seca. Sem caminho verificável ou com destino alagado, a tela não recomenda rota. O protótipo é a pé e não indica passagem segura.
 
 Para refazer as bases da Tela 2 por código:
 
 ```bash
 python3 -m scripts.preparar_bairros
-python3 -m scripts.preparar_rotas_2024
+python3 -m scripts.preparar_rotas
 python3 -m scripts.preparar_modelo_agua
 python3 -m scripts.preparar_previsao
 ```
 
-Os downloads (Copernicus, blocos de relevo e série mensal da ANA) ficam em `dados/cache/`, fora do Git, para não repetir requisições.
+Os downloads (Copernicus, blocos de relevo, blocos do OpenStreetMap e série mensal da ANA) ficam em `dados/cache/`, fora do Git, para não repetir requisições.
 
 ## Como reproduzir
 

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import math
+import struct
+import zlib
 from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -38,7 +40,7 @@ def model() -> dict:
     cell, x_min, y_max = data["transform"]
     return {"ground": data["ground_cm"].astype(np.float32) / 100,
             "spill": data["spill_cm"].astype(np.float32) / 100,
-            "poa": data["poa"], "cell": float(cell), "x_min": float(x_min), "y_max": float(y_max)}
+            "poa": data["poa"], "lake": data["lake"], "cell": float(cell), "x_min": float(x_min), "y_max": float(y_max)}
 
 
 @lru_cache(maxsize=1)
@@ -85,6 +87,48 @@ def point_window(lat: float, lon: float, half_cells: int = 30) -> dict | None:
         "ground_msl_m": np.round(ground, 2).tolist(),
         "spill_msl_m": np.where(spill < 99, np.round(spill, 2), None).tolist(),
     }
+
+
+DEPTH_RGBA = [(159, 211, 234, 150), (90, 174, 216, 165), (43, 127, 189, 180), (23, 80, 143, 195)]  # mesmas faixas do 3D
+
+
+def _png(rgba: np.ndarray) -> bytes:
+    """Codifica uma imagem RGBA (altura × largura × 4, uint8) em PNG sem depender do Pillow."""
+    height, width, _ = rgba.shape
+    raw = b"".join(b"\x00" + rgba[row].tobytes() for row in range(height))
+    chunk = lambda kind, data: struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw, 6)) + chunk(b"IEND", b""))
+
+
+def grid_window(bbox: tuple[float, float, float, float]) -> tuple[slice, slice, list[list[float]]]:
+    """Células do modelo que cobrem o retângulo (oeste, sul, leste, norte) e seus limites em lat/lon."""
+    m = model()
+    w, s, e, n = bbox
+    xs, ys = _TO_UTM.transform([w, e, w, e], [s, s, n, n])
+    rows, cols = m["ground"].shape
+    c0 = max(0, int((min(xs) - m["x_min"]) // m["cell"]))
+    c1 = min(cols, int((max(xs) - m["x_min"]) // m["cell"]) + 1)
+    r0 = max(0, int((m["y_max"] - max(ys)) // m["cell"]))
+    r1 = min(rows, int((m["y_max"] - min(ys)) // m["cell"]) + 1)
+    x0, x1 = m["x_min"] + c0 * m["cell"], m["x_min"] + c1 * m["cell"]
+    y0, y1 = m["y_max"] - r0 * m["cell"], m["y_max"] - r1 * m["cell"]
+    lons, lats = _TO_GEO.transform([x0, x1], [y1, y0])
+    return slice(r0, r1), slice(c0, c1), [[lats[0], lons[0]], [lats[1], lons[1]]]
+
+
+@lru_cache(maxsize=64)
+def overlay_png(bbox: tuple[float, float, float, float], level_regua: float) -> bytes:
+    """Imagem da água do modelo (fora do lago) no nível escolhido, colorida por faixa de profundidade."""
+    m = model()
+    rows, cols, _ = grid_window(bbox)
+    level = regua_to_msl(level_regua)
+    ground, spill, lake = m["ground"][rows, cols], m["spill"][rows, cols], m["lake"][rows, cols]
+    depth = np.where((spill < level) & ~lake, level - ground, 0)
+    band = np.digitize(depth, [0.5, 1, 2])
+    palette = np.array(DEPTH_RGBA, dtype=np.uint8)
+    rgba = np.where((depth > 0)[..., None], palette[band], 0).astype(np.uint8)
+    return _png(rgba)
 
 
 _EDGE_SAMPLES: dict[int, list] = {}

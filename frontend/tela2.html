@@ -7,17 +7,17 @@
   <title>O Guaíba agora | TrabalhoCPA</title>
   <link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="/assets/vendor/maplibre/maplibre-gl.css" />
-  <link rel="stylesheet" href="/assets/route.css?v=3" />
+  <link rel="stylesheet" href="/assets/route.css?v=5" />
   <link rel="stylesheet" href="/assets/ana.css?v=3" />
-  <link rel="stylesheet" href="/assets/tela2.css?v=3" />
+  <link rel="stylesheet" href="/assets/tela2.css?v=5" />
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
   <script defer src="/assets/vendor/maplibre/maplibre-gl.js"></script>
   <script defer src="/assets/scenario.js?v=3"></script>
   <script defer src="/assets/live.js?v=3"></script>
-  <script defer src="/assets/maps.js?v=3"></script>
+  <script defer src="/assets/maps.js?v=5"></script>
   <script defer src="/assets/impact.js?v=3"></script>
   <script defer src="/assets/point3d.js?v=4"></script>
-  <script defer src="/assets/route.js?v=4"></script>
+  <script defer src="/assets/route.js?v=5"></script>
   <script defer src="/assets/ana.js?v=3"></script>
 </head>
 <body>
@@ -55,7 +55,7 @@
       <article class="indicator-card">
         <div><span>Pessoas afetadas</span><strong id="kpi-people">—</strong><small>simulação INCT, toda a cidade</small></div>
         <div><span>Bairros atingidos</span><strong id="kpi-bairros">—</strong><small>de 94 · simulação INCT</small></div>
-        <div><span>Ruas com água no centro</span><strong id="kpi-streets">—</strong><small>trechos a pé · modelo de água</small></div>
+        <div><span>Ruas com água</span><strong id="kpi-streets">—</strong><small id="kpi-streets-label">área das rotas · modelo de água</small></div>
         <div><span>Água no ponto escolhido</span><strong id="kpi-point">—</strong><small id="kpi-point-label">ponto do mapa 3D</small></div>
       </article>
     </section>
@@ -107,19 +107,43 @@
       </div>
 
       <div id="pane-route" class="map-pane" role="tabpanel" hidden>
-        <div class="workspace">
-          <section class="map-panel" aria-label="Mapa de rotas"><div id="route-map" role="application" aria-label="Mapa para selecionar origem e destino"></div><div class="legend"><span><i class="water-area"></i>Mancha observada 06/05/2024</span><span><i class="dry"></i>Rua sem água</span><span><i class="flood"></i>Rua com água no cenário</span><span><i class="unknown"></i>Sem cota (pontes)</span><span><i class="normal-path"></i>Sem alagamento</span><span><i class="path"></i>Rota no cenário</span></div></section>
-          <aside class="controls">
-            <h2>Traçar rota</h2>
-            <p id="instruction">Clique sobre uma linha de rua para marcar a origem A.</p>
-            <div class="point"><span class="point-letter">A</span><div><small>ORIGEM</small><strong id="origin-label">Não escolhida</strong></div></div>
-            <div class="point"><span class="point-letter destination-letter">B</span><div><small>DESTINO</small><strong id="destination-label">Não escolhido</strong></div></div>
-            <div class="examples"><button id="example-detour" type="button">Exemplo de desvio</button><button id="example-flooded" type="button">Origem alagada</button></div>
-            <button id="clear-route" type="button">Escolher outros pontos</button>
-            <label class="toggle"><input id="show-observed" type="checkbox" /> Mostrar mancha observada em 06/05/2024</label>
-            <div id="route-result" class="route-result" role="status" aria-live="polite">Aguardando origem e destino.</div>
-            <p class="limit">Protótipo a pé no centro. A profundidade vem do modelo de água no nível do cenário; o mapa não considera bloqueios, correnteza, pontes sem cota ou condições atuais. Menor exposição não significa passagem segura.</p>
-            <div class="sources"><strong>Fontes</strong><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap · rede de ruas</a><a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194 · mancha e profundidade 2024</a><small id="collection-date">Carregando data de coleta...</small></div>
+        <div class="pane-layout">
+          <div class="route-view">
+            <div id="route-map" role="application" aria-label="Mapa de ruas com a água do cenário; clique para escolher de onde sair"></div>
+            <div class="route-mode" role="group" aria-label="Tipo de rota">
+              <button type="button" id="mode-exit" class="active">Saída a pé</button>
+              <button type="button" id="mode-ab">De A para B</button>
+            </div>
+            <div id="route-banner" class="route-banner" hidden></div>
+            <div class="street-legend">
+              <span><i class="water"></i>Água (modelo)</span>
+              <span><i class="st st1"></i>Rua com até 30 cm</span>
+              <span><i class="st st2"></i>30 cm a 1 m</span>
+              <span><i class="st st3"></i>Mais de 1 m</span>
+              <span><i class="st dry"></i>Rua seca</span>
+              <span><i class="st path"></i>Rota</span>
+              <span id="legend-normal" hidden><i class="st normal"></i>Sem alagamento</span>
+            </div>
+          </div>
+          <aside class="pane-side">
+            <p class="eyebrow">ROTA A PÉ · ÁREA QUE ALAGOU EM 2024</p>
+            <h3 id="route-title">Saída até o ponto seco mais próximo</h3>
+            <p class="point-help" id="route-help">Clique no mapa para escolher de onde sair; o ponto vale para a tela toda (3D e indicadores).</p>
+            <div id="route-result" class="route-result" role="status" aria-live="polite">Carregando ruas...</div>
+            <div class="route-examples" id="route-examples">
+              <span>Experimente:</span>
+              <button type="button" data-lat="-30.0012" data-lon="-51.1994" data-label="Av. Farrapos · São Geraldo">4º Distrito</button>
+              <button type="button" data-lat="-30.0266" data-lon="-51.2282" data-label="Perto do Mercado Público · Centro">Centro</button>
+              <button type="button" data-lat="-30.0499" data-lon="-51.2298" data-label="Av. Praia de Belas · Menino Deus">Menino Deus</button>
+            </div>
+            <div id="route-ab" class="route-ab" hidden>
+              <div class="point"><span class="point-letter">A</span><div><small>ORIGEM</small><strong id="origin-label">Clique no mapa</strong></div></div>
+              <div class="point"><span class="point-letter destination-letter">B</span><div><small>DESTINO</small><strong id="destination-label">—</strong></div></div>
+              <button id="clear-route" type="button" class="link-button">Escolher outros pontos</button>
+            </div>
+            <label class="toggle"><input id="show-observed" type="checkbox" /> Comparar com a mancha observada em 06/05/2024</label>
+            <p class="caveat">Estimativa do modelo de água: não considera correnteza, bloqueios, bueiros ou obras. O ponto seco é o mais perto em que o rio precisaria subir pelo menos mais 1 m para chegar. Não indica passagem segura: em emergência, siga a Defesa Civil (199).</p>
+            <small id="collection-date">Ruas: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. Mancha de 2024: <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a>.</small>
           </aside>
         </div>
       </div>

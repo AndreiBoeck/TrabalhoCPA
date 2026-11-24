@@ -62,9 +62,36 @@
 .impact-legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #536a70; }
 .impact-legend i { flex: 1; height: 12px; border-radius: 999px; background: linear-gradient(90deg, #dce7e8, #c1e2e6, #8bc9d4, #55a7bf, #287eaa, #164b7c); }
 .caveat { margin: 0; padding: 10px 12px; border-left: 3px solid #d78749; background: #fff7ec; border-radius: 0 8px 8px 0; font-size: 12px; line-height: 1.45; }
-.map-pane .workspace { grid-template-columns: minmax(0, 1fr) 300px; }
-.map-pane #route-map { height: 560px; min-height: 0; }
-.legend i.dry { border-color: #9cb5bb; }
+.route-view { position: relative; display: flex; flex-direction: column; gap: 8px; }
+.map-pane #route-map { height: 560px; min-height: 0; border-radius: 14px; z-index: 0; }
+.route-mode { position: absolute; left: 56px; top: 12px; z-index: 500; display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: rgba(255, 255, 255, .94); box-shadow: 0 2px 8px #14405226; }
+.route-mode button { width: auto; margin: 0; padding: 7px 12px; font-size: 12px; background: transparent; }
+.route-mode button.active { background: #176f7e; color: #fff; }
+.route-banner { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); z-index: 500; display: flex; align-items: center; gap: 10px; width: max-content; max-width: 90%; padding: 9px 12px; border-radius: 10px; background: #fff8ef; border: 1px solid #efcfb2; color: #7a4a26; font-size: 12px; box-shadow: 0 4px 14px #14405222; }
+.route-banner button { width: auto; margin: 0; padding: 7px 10px; background: #c0703f; color: #fff; white-space: nowrap; font-size: 11px; }
+.route-banner button:hover { background: #a35a2f; }
+.street-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: #536a70; padding: 2px 4px; }
+.street-legend span { display: flex; align-items: center; gap: 6px; }
+.street-legend i { display: inline-block; width: 18px; }
+.street-legend i.water { height: 10px; border-radius: 3px; background: linear-gradient(90deg, #9fd3ea, #5aaed8, #2b7fbd, #17508f); }
+.street-legend i.st { border-top: 4px solid; }
+.street-legend i.st1 { border-color: #f2b04a; } .street-legend i.st2 { border-color: #e0603e; } .street-legend i.st3 { border-color: #9e1f2c; }
+.street-legend i.dry { border-top-width: 2px; border-color: #9aabb0; } .street-legend i.path { border-color: #11845b; border-top-width: 5px; }
+.street-legend i.normal { border-color: #4f6168; border-top-style: dashed; }
+.street-legend span[hidden], .route-examples[hidden], .route-banner[hidden] { display: none; }
+#route-map .leaflet-tile-pane { filter: grayscale(.85) brightness(1.06) contrast(.92); }
+.route-pin span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px #0004; color: #fff; font-size: 12px; font-weight: 800; }
+.pane-side .route-result { font-size: 13px; line-height: 1.5; padding: 12px 14px; border-radius: 10px; background: #e8f3f5; color: #195b70; }
+.pane-side .route-result strong { display: block; font-size: 16px; margin-bottom: 4px; color: #17313e; }
+.pane-side .route-result small { color: #5f7a83; }
+.pane-side .route-result.ok, .pane-side .route-result.safe { background: #e6f4ec; color: #1d5a40; }
+.pane-side .route-result.wet { background: #fff3ea; color: #6e3f1f; }
+.pane-side .route-result.unavailable { background: #fff0eb; color: #84462f; }
+.route-warn b { color: #9e1f2c; }
+.route-examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: #5f7a83; }
+.route-examples button { width: auto; margin: 0; padding: 7px 10px; font-size: 11px; background: #fff; border: 1px solid #d5e4e7; }
+.route-ab .point { background: #fff; margin-bottom: 6px; }
+.route-ab .link-button { margin-top: 2px; }
 .toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #355d66; margin: 0 0 12px; }
 
 .forecast-card { background: #fff; border: 1px solid #dfeaec; border-radius: 18px; box-shadow: 0 4px 15px #14405208; padding: 20px 22px; margin-bottom: 30px; }
@@ -90,7 +117,7 @@
 @media (max-width: 1100px) { .now-grid { grid-template-columns: 1fr 1fr; } .indicator-card { grid-column: 1 / -1; grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 850px) {
   .now-grid { grid-template-columns: 1fr; } .indicator-card { grid-template-columns: 1fr 1fr; }
-  .pane-layout, .map-pane .workspace { grid-template-columns: 1fr; }
+  .pane-layout { grid-template-columns: 1fr; }
   #impact-map, .point-view, .map-pane #route-map { height: 420px; }
   .topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; }
 }

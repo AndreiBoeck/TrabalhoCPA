@@ -259,8 +259,8 @@ def build() -> None:
              "Profundidade e manchas de 04 a 10/05/2024: calibração e validação do modelo de água", "24/11/2026"],
             ["Terrain Tiles (AWS Open Data)", "Download automatizado (<b>scripts/preparar_modelo_agua.py</b>)",
              "Relevo do modelo de água", "24/11/2026"],
-            ["OpenStreetMap / OpenFreeMap", "API do OSM (<b>scripts/preparar_rotas_2024.py</b>) e blocos vetoriais "
-             "do OpenFreeMap", "Rede de ruas das rotas; mapa e prédios 3D", "10/11/2026 e ao vivo"],
+            ["OpenStreetMap / OpenFreeMap", "API do OSM (<b>scripts/preparar_rotas.py</b>) e blocos vetoriais "
+             "do OpenFreeMap", "Rede de ruas das rotas (922 km); mapa e prédios 3D", "24/11/2026 e ao vivo"],
         ], [40, 58, 50, 26]),
         Spacer(1, 4),
         p("Cada visualização exibe a fonte com link e a data de coleta, como pede o enunciado.", "small"),
@@ -277,7 +277,8 @@ def build() -> None:
           "baixou."),
         figure("t2_2_3d.png", "Figura 3. Aba Água no ponto · 3D: prédios do OpenStreetMap em altura real e a água do "
                "modelo em volta da Rodoviária no cenário de 5,35 m, com cor e altura pela profundidade.", max_height_mm=110),
-        figure("t2_3_rotas.png", "Figura 4. Aba Rotas a pé: trechos com água no centro no cenário de 5,35 m.",
+        figure("t2_3_rotas.png", "Figura 4. Aba Rotas a pé no cenário de 5,35 m: saída a pé do 4º Distrito até o ponto seco "
+               "mais próximo, pelas ruas com menos água (amarelo: até 30 cm; vermelho: mais fundo).",
                max_height_mm=105),
         p("Previsão do nível", "h2"),
         p(f"Para cada horizonte de 6 a 72 h, uma regressão linear prevê a variação do nível a partir da tendência "
@@ -348,10 +349,11 @@ def build() -> None:
         bullet("Os três mapas viraram um componente só, em abas, logo abaixo do nível atual."),
         bullet("A vista 3D deixou de mostrar só 06/05/2024: agora é um mapa 3D com prédios em altura real e a água "
                "do novo modelo, calibrado e validado, em qualquer ponto da cidade e no nível escolhido."),
-        bullet("As rotas passaram a usar o nível do cenário em vez de um único dia histórico."),
+        bullet("As rotas passaram a usar o nível do cenário em vez de um único dia histórico e cobrem toda a área que "
+               "alagou em 2024 (922 km de ruas, antes 1 km²), com saída a pé automática até o ponto seco mais próximo."),
         bullet("Previsão de 72 h com modelo próprio, validada em 12 meses fora do treino."),
         bullet("Mapa temático dos 94 bairros com limites oficiais (diferencial opcional do enunciado)."),
-        bullet("18 testes automatizados (rotas, API, dados espaciais, modelo de água e previsão)."),
+        bullet("22 testes automatizados (rotas, API, dados espaciais, modelo de água e previsão)."),
         bullet("Este relatório, gerado por <b>scripts/gerar_relatorio_dashboard.py</b>."),
 
         p("6. Uso de ferramentas de IA", "h1"),
