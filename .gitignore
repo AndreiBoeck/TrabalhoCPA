@@ -3,3 +3,5 @@ __pycache__/
 .DS_Store
 tmp/
 dados/cache/
+deploy/cloudflare/node_modules/
+deploy/cloudflare/.wrangler/

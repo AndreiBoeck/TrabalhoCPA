@@ -30,7 +30,7 @@ FIGS = ROOT / "relatorios/figuras_dashboard"
 
 # --- Campos que a equipe deve completar -------------------------------------
 EQUIPE = "A PREENCHER: nomes dos integrantes"
-LINK_PUBLICO = "A PREENCHER: link público do dashboard"
+LINK_PUBLICO = "https://cpa.lambari.dev.br"
 DATA_RELATORIO = "24/11/2026"
 # Observações da equipe sobre a ferramenta atual do INCT (Flood - INCT SiMAI).
 # Cada item: (o que observamos, como o nosso dashboard responde).

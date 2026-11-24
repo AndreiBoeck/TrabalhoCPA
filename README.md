@@ -25,7 +25,9 @@ As fases de levantamento, limpeza e análise exploratória estão salvas neste r
 - **Tela 1** (`/`): controle deslizante de 3,0 a 10,0 m em passos de 0,1 m, três indicadores, porcentagem de prédios afetados por bairro, curva da população afetada com a marca de 5,35 m e ranking. Usa apenas o JSON limpo do INCT.
 - **Tela 2** (`/tela2`): acompanha o nível do Guaíba em tempo real e mostra o que ele alaga. Detalhes abaixo.
 
-Os nomes dos integrantes, a avaliação manual da ferramenta atual do INCT e o link público do dashboard devem ser acrescentados pela equipe. O aviso de limitações em destaque foi retirado da Tela 1 a pedido da equipe, mas é exigido pelo enunciado.
+Dashboard publicado: **[https://cpa.lambari.dev.br](https://cpa.lambari.dev.br)** (Tela 2 em [/tela2](https://cpa.lambari.dev.br/tela2)).
+
+Os nomes dos integrantes e a avaliação manual da ferramenta atual do INCT devem ser acrescentados pela equipe. O aviso de limitações em destaque foi retirado da Tela 1 a pedido da equipe, mas é exigido pelo enunciado.
 
 ## Executar a aplicação
 
@@ -37,6 +39,14 @@ python3 -m uvicorn backend.main:app --reload
 ```
 
 Abra [http://127.0.0.1:8000](http://127.0.0.1:8000) (Tela 1) e [http://127.0.0.1:8000/tela2](http://127.0.0.1:8000/tela2) (Tela 2). A documentação da API fica em `/docs`. Execute `python3 -m unittest discover -s tests -v` para os testes.
+
+### Publicação
+
+O site público roda no Cloudflare Containers: o `Dockerfile` da raiz gera a imagem da aplicação e `deploy/cloudflare/` tem o Worker que encaminha `cpa.lambari.dev.br` para o container. Para publicar uma nova versão (precisa do Docker e de acesso à conta Cloudflare):
+
+```bash
+cd deploy/cloudflare && npm install && npx wrangler deploy
+```
 
 ## Tela 2: o Guaíba agora e o que ele alaga
 

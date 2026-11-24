@@ -1,0 +1,17 @@
+{
+  "name": "cpa-dashboard",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "routes": [{ "pattern": "cpa.lambari.dev.br", "custom_domain": true }],
+  "containers": [
+    {
+      "class_name": "Dashboard",
+      "image": "../../Dockerfile",
+      "image_build_context": "../..",
+      "instance_type": "basic",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": { "bindings": [{ "name": "DASHBOARD", "class_name": "Dashboard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Dashboard"] }]
+}

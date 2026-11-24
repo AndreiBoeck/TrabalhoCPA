@@ -1,0 +1,6 @@
+.git
+dados/cache
+tmp
+deploy
+**/__pycache__
+**/.DS_Store
