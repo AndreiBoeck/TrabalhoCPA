@@ -278,7 +278,8 @@ def build() -> None:
         figure("t2_2_3d.png", "Figura 3. Aba Água no ponto · 3D: prédios do OpenStreetMap em altura real e a água do "
                "modelo em volta da Rodoviária no cenário de 5,35 m, com cor e altura pela profundidade.", max_height_mm=110),
         figure("t2_3_rotas.png", "Figura 4. Aba Rotas a pé no cenário de 5,35 m: saída a pé do 4º Distrito até o ponto seco "
-               "mais próximo, pelas ruas com menos água (amarelo: até 30 cm; vermelho: mais fundo).",
+               "mais próximo, pelas ruas com menos água (amarelo: até 30 cm; vermelho: mais fundo). Os quadrados de 200 m "
+               "enchem conforme a porcentagem da área com água.",
                max_height_mm=105),
         p("Previsão do nível", "h2"),
         p(f"Para cada horizonte de 6 a 72 h, uma regressão linear prevê a variação do nível a partir da tendência "

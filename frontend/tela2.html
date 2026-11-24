@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/assets/vendor/maplibre/maplibre-gl.css" />
   <link rel="stylesheet" href="/assets/route.css?v=5" />
   <link rel="stylesheet" href="/assets/ana.css?v=3" />
-  <link rel="stylesheet" href="/assets/tela2.css?v=5" />
+  <link rel="stylesheet" href="/assets/tela2.css?v=6" />
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
   <script defer src="/assets/vendor/maplibre/maplibre-gl.js"></script>
   <script defer src="/assets/scenario.js?v=3"></script>
@@ -17,7 +17,7 @@
   <script defer src="/assets/maps.js?v=5"></script>
   <script defer src="/assets/impact.js?v=3"></script>
   <script defer src="/assets/point3d.js?v=4"></script>
-  <script defer src="/assets/route.js?v=5"></script>
+  <script defer src="/assets/route.js?v=6"></script>
   <script defer src="/assets/ana.js?v=3"></script>
 </head>
 <body>
@@ -114,9 +114,11 @@
               <button type="button" id="mode-exit" class="active">Saída a pé</button>
               <button type="button" id="mode-ab">De A para B</button>
             </div>
+            <button type="button" id="play-water" class="play-water">▶ Ver a água subir</button>
+            <span id="play-level" class="play-level" hidden></span>
             <div id="route-banner" class="route-banner" hidden></div>
             <div class="street-legend">
-              <span><i class="water"></i>Água (modelo)</span>
+              <span><i class="square"></i>Quadrado de 200 m: enche conforme a % da área com água</span>
               <span><i class="st st1"></i>Rua com até 30 cm</span>
               <span><i class="st st2"></i>30 cm a 1 m</span>
               <span><i class="st st3"></i>Mais de 1 m</span>

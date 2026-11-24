@@ -73,6 +73,11 @@
 .street-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: #536a70; padding: 2px 4px; }
 .street-legend span { display: flex; align-items: center; gap: 6px; }
 .street-legend i { display: inline-block; width: 18px; }
+.street-legend i.square { width: 14px; height: 14px; border: 1px solid #8fb0b8; background: linear-gradient(0deg, #3a8cc6 0 60%, transparent 60%); }
+.play-water, .play-water:hover { position: absolute; right: 12px; top: 12px; z-index: 500; width: auto; margin: 0; padding: 8px 13px; border-radius: 10px; background: #176f7e; color: #fff; font-size: 12px; box-shadow: 0 2px 8px #14405226; }
+.play-water:hover { background: #125c69; }
+.play-level { position: absolute; right: 12px; top: 52px; z-index: 500; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, .94); color: #155f86; font-size: 22px; font-weight: 800; letter-spacing: -.03em; box-shadow: 0 2px 8px #14405226; }
+.play-level[hidden] { display: none; }
 .street-legend i.water { height: 10px; border-radius: 3px; background: linear-gradient(90deg, #9fd3ea, #5aaed8, #2b7fbd, #17508f); }
 .street-legend i.st { border-top: 4px solid; }
 .street-legend i.st1 { border-color: #f2b04a; } .street-legend i.st2 { border-color: #e0603e; } .street-legend i.st3 { border-color: #9e1f2c; }
