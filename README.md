@@ -90,6 +90,7 @@ Abra os notebooks na ordem `01_limpeza_inct.ipynb`, `02_coleta_limpeza_ana.ipynb
 - `dados/processados/auditoria_ana.csv`: registros sem nível e horários sem medição.
 - `resultados/figuras/`: oito gráficos da EDA.
 - `relatorios/base_dados.pdf` e `relatorios/limpeza_dados.pdf`: entregas das fases 1 e 2.
+- `relatorios/dashboard.pdf`: relatório do dashboard (objetivo das telas, visualizações, uso, limitações e mudanças desde a Fase 3), gerado por `python3 -m scripts.gerar_relatorio_dashboard`.
 - `relatorios/wireframe.md`: esboço das duas telas.
 - `relatorios/checklist_tela2.md`: requisitos, extras e critérios de conclusão da Tela 2.
 - `dados/processados/bairros_poa.geojson`: limites oficiais simplificados dos 94 bairros.
