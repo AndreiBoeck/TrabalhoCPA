@@ -28,8 +28,9 @@ function renderCurrent(live) {
   liveEl("current-level-value").textContent = `${fmt(live.level_regua_m)} m`;
   liveEl("current-level-msl").textContent = `régua do Cais Mauá · ${fmt(live.level_m)} m no referencial corrigido da ANA`;
   liveEl("current-level-time").textContent = `Medição ${live.measurement_at.replace("T", " ").slice(0, 16)} · estação ${live.station_code} · ${live.station_name}`;
-  liveEl("current-level-status").textContent = live.status === "recent"
-    ? "Leitura recente (até 2 h). Atualiza a cada 5 min."
+  liveEl("current-level-status").textContent = live.source_error
+    ? "O serviço da ANA não respondeu agora; mostrando a última leitura obtida. Nova tentativa em 5 min."
+    : live.status === "recent" ? "Leitura recente (até 2 h). Atualiza a cada 5 min."
     : "Leitura com mais de 2 h: pode não representar o nível atual.";
 }
 

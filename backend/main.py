@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import time
 import csv
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from pathlib import Path
@@ -180,10 +182,15 @@ def ana_history_public():
 ANA_SOURCE = "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos"
 
 
-def _ana_readings(start, end) -> list[tuple[datetime, float]]:
+BRT = timezone(timedelta(hours=-3))  # horário de Brasília (sem horário de verão desde 2019); a ANA informa nesse horário
+_ANA_DAYS: dict = {}  # dia -> leituras; dias encerrados não mudam e ficam guardados
+
+
+def _ana_day(day) -> list[tuple[datetime, float]]:
+    """Leituras de um único dia. A ANA passou a falhar (erro 500 após 30 s) em consultas de vários dias."""
     response = requests.get(ANA_SOURCE, params={
-        "codEstacao": "87450020", "dataInicio": start.strftime("%d/%m/%Y"), "dataFim": end.strftime("%d/%m/%Y"),
-    }, headers={"User-Agent": "TrabalhoCPA/1.0 (pesquisa academica)"}, timeout=20)
+        "codEstacao": "87450020", "dataInicio": day.strftime("%d/%m/%Y"), "dataFim": day.strftime("%d/%m/%Y"),
+    }, headers={"User-Agent": "TrabalhoCPA/1.0 (pesquisa academica)"}, timeout=25)
     response.raise_for_status()
     readings = []
     for item in ET.fromstring(response.content).iter():
@@ -199,7 +206,32 @@ def _ana_readings(start, end) -> list[tuple[datetime, float]]:
             continue
         if -1 < level < 20:
             readings.append((measured, level))
-    return sorted(readings)
+    return readings
+
+
+def _ana_readings(start, end) -> list[tuple[datetime, float]]:
+    """Junta as leituras dia a dia, em paralelo. Hoje e ontem são sempre consultados de novo; dias
+    anteriores vêm do cache. Falha em um dia não derruba os outros; sem nenhum dia, propaga o erro."""
+    today = datetime.now(BRT).date()
+    days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+    pending = [d for d in days if d not in _ANA_DAYS or d >= today - timedelta(days=1)]
+    errors = []
+    for attempt in range(3):  # a ANA recusa parte das consultas simultâneas; tenta de novo os dias que falharam
+        failed = []
+        with ThreadPoolExecutor(max_workers=4 if attempt == 0 else 1) as pool:
+            for day, future in [(d, pool.submit(_ana_day, d)) for d in pending]:
+                try:
+                    _ANA_DAYS[day] = future.result()
+                except (requests.RequestException, ET.ParseError) as error:
+                    failed.append(day)
+                    errors.append(error)
+        if not failed:
+            break
+        pending = failed
+        time.sleep(1)
+    if errors and not any(d in _ANA_DAYS for d in days):
+        raise errors[0]
+    return sorted(r for d in days for r in _ANA_DAYS.get(d, []))
 
 
 def _hourly(readings: list[tuple[datetime, float]]) -> list[tuple[datetime, float]]:
@@ -211,15 +243,17 @@ def _hourly(readings: list[tuple[datetime, float]]) -> list[tuple[datetime, floa
 
 @lru_cache(maxsize=2)
 def _fetch_live(time_bucket: int) -> dict:
-    now = datetime.now().astimezone()
+    now = datetime.now(BRT)
     base = {"station_code": "87450020", "station_name": "Usina do Gasômetro",
             "vertical_reference": "Marco IBGE 1788A; nível médio do mar",
             "regua_offset_m": water.REGUA_OFFSET,
             "source_url": ANA_SOURCE, "queried_at": now.isoformat(timespec="seconds"),
-            "time_note": "Horário da medição informado pela ANA sem fuso explícito; avaliação de recência usa o horário local do servidor."}
+            "time_note": "Horário da medição informado pela ANA sem fuso explícito, tratado como horário de Brasília (UTC−3)."}
     try:
         readings = _ana_readings(now.date() - timedelta(days=32), now.date())
     except (requests.RequestException, ET.ParseError):
+        if _LAST_LIVE:  # ANA fora do ar: mantém a última resposta boa, marcada pela idade da medição
+            return {**_LAST_LIVE[0], "queried_at": base["queried_at"], "status": "stale", "source_error": True}
         return {**base, "status": "unavailable", "reason": "source_unavailable", "recent": [],
                 "forecast": {"status": "unavailable", "reason": "source_unavailable"}}
     if not readings:
@@ -229,12 +263,24 @@ def _fetch_live(time_bucket: int) -> dict:
     age_minutes = (now.replace(tzinfo=None) - measured).total_seconds() / 60
     hourly = _hourly(readings)
     week_start = hourly[-1][0] - timedelta(days=7)
-    return {**base, "status": "recent" if 0 <= age_minutes <= 120 else "stale",
+    result = {**base, "status": "recent" if 0 <= age_minutes <= 120 else "stale",
             "measurement_at": measured.isoformat(timespec="seconds"),
             "level_m": level, "level_regua_m": round(water.msl_to_regua(level), 2),
             "age_minutes": round(age_minutes, 1),
             "recent": [[t.isoformat(timespec="minutes"), round(v, 3)] for t, v in hourly if t >= week_start],
             "forecast": water.forecast(hourly)}
+    _LAST_LIVE[:] = [result]
+    return result
+
+
+_LAST_LIVE: list = []
+
+
+@app.on_event("startup")
+def _warm_live():
+    """Busca a série da ANA em segundo plano ao subir o servidor, para a primeira visita não esperar."""
+    import threading
+    threading.Thread(target=live, daemon=True).start()
 
 
 @app.get("/api/live")
