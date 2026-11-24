@@ -259,8 +259,8 @@ def build() -> None:
              "Profundidade e manchas de 04 a 10/05/2024: calibração e validação do modelo de água", "24/11/2026"],
             ["Terrain Tiles (AWS Open Data)", "Download automatizado (<b>scripts/preparar_modelo_agua.py</b>)",
              "Relevo do modelo de água", "24/11/2026"],
-            ["OpenStreetMap", "API do OSM (<b>scripts/preparar_rotas_2024.py</b>) e blocos do mapa",
-             "Rede de ruas das rotas e mapa sobre o relevo 3D", "10/11/2026 e ao vivo"],
+            ["OpenStreetMap / OpenFreeMap", "API do OSM (<b>scripts/preparar_rotas_2024.py</b>) e blocos vetoriais "
+             "do OpenFreeMap", "Rede de ruas das rotas; mapa e prédios 3D", "10/11/2026 e ao vivo"],
         ], [40, 58, 50, 26]),
         Spacer(1, 4),
         p("Cada visualização exibe a fonte com link e a data de coleta, como pede o enunciado.", "small"),
@@ -275,8 +275,8 @@ def build() -> None:
           f"{fmt_pct(v['2024-05-10']['iou'])} em 10/05/2024. A precisão fica acima de 98% (onde o modelo põe água, "
           "havia água), mas ele subestima a área porque não representa a água represada atrás dos diques quando o rio "
           "baixou."),
-        figure("t2_2_3d.png", "Figura 3. Aba Água no ponto · 3D: 1,2 km × 1,2 km em volta da Rodoviária, com o "
-               "mapa do OpenStreetMap sobre o relevo e a água no cenário de 5,35 m.", max_height_mm=110),
+        figure("t2_2_3d.png", "Figura 3. Aba Água no ponto · 3D: prédios do OpenStreetMap em altura real e a água do "
+               "modelo em volta da Rodoviária no cenário de 5,35 m, com cor e altura pela profundidade.", max_height_mm=110),
         figure("t2_3_rotas.png", "Figura 4. Aba Rotas a pé: trechos com água no centro no cenário de 5,35 m.",
                max_height_mm=105),
         p("Previsão do nível", "h2"),
@@ -303,8 +303,9 @@ def build() -> None:
              "Pessoas e bairros (INCT), ruas com água no centro e água no ponto escolhido, numa leitura só."],
             ["Mapas em abas (Bairros, 3D, Rotas)",
              "Três escalas da mesma pergunta (bairro, quarteirão, rua) no destaque da tela, sem rolar a página."],
-            ["Vista 3D com mapa real",
-             "Mostrar o mapa da rua sob a água torna a profundidade compreensível para moradores e imprensa."],
+            ["Mapa 3D com prédios e água",
+             "Ver os prédios do próprio bairro parcialmente submersos torna a profundidade compreensível para "
+             "moradores e imprensa; a cor da água separa faixas de 0,5 a 3 m."],
             ["Gráfico de previsão com faixa",
              "Linha contínua para o observado, tracejada para a previsão e faixa para a incerteza: o leitor vê o "
              "quanto confiar no número."],
@@ -318,8 +319,8 @@ def build() -> None:
                "<b>Recorde 2024</b> ou um ponto do gráfico de previsão para mudar o cenário; <b>Voltar ao tempo "
                "real</b> retoma a leitura atual."),
         bullet("Na aba <b>Bairros</b>, clique em um bairro para ver os valores; o ponto do 3D vai para lá."),
-        bullet("Na aba <b>Água no ponto · 3D</b>, clique no mini mapa para escolher outro ponto e arraste a vista "
-               "para girar."),
+        bullet("Na aba <b>Água no ponto · 3D</b>, clique no mapa para escolher outro ponto; arraste com o botão "
+               "direito para girar e inclinar, ou use os botões 3D, De cima e Girar 90°."),
         bullet("Na aba <b>Rotas a pé</b>, clique numa rua para marcar A e depois B, ou use os exemplos."),
         bullet("Na seção de 2024, escolha as datas <b>De</b> e <b>Até</b>. O endereço "
                "<b>/tela2#aba=point&amp;nivel=5.35</b> abre a tela já numa aba e num nível."),
@@ -345,8 +346,8 @@ def build() -> None:
         bullet("Tela 2 reorganizada em torno do tempo real: leitura atual, cenário único com sincronização e botão "
                "<b>Voltar ao tempo real</b>."),
         bullet("Os três mapas viraram um componente só, em abas, logo abaixo do nível atual."),
-        bullet("A vista 3D deixou de mostrar só 06/05/2024: agora mostra qualquer ponto da cidade, com mapa real, no "
-               "nível escolhido, usando o novo modelo de água calibrado e validado."),
+        bullet("A vista 3D deixou de mostrar só 06/05/2024: agora é um mapa 3D com prédios em altura real e a água "
+               "do novo modelo, calibrado e validado, em qualquer ponto da cidade e no nível escolhido."),
         bullet("As rotas passaram a usar o nível do cenário em vez de um único dia histórico."),
         bullet("Previsão de 72 h com modelo próprio, validada em 12 meses fora do treino."),
         bullet("Mapa temático dos 94 bairros com limites oficiais (diferencial opcional do enunciado)."),
@@ -357,7 +358,7 @@ def build() -> None:
         bullet("<b>Codex</b>, 26/10/2026: apoio na preparação de scripts, notebooks, limpeza, gráficos e relatórios "
                "iniciais (registrado no README)."),
         bullet("<b>Claude Code</b>, 24/11/2026: organização dos commits finais; reorganização da Tela 2 (tempo real, "
-               "abas, 3D por ponto); modelo de água e previsão com suas validações; capturas de tela e redação deste "
+               "abas, mapa 3D com prédios); modelo de água e previsão com suas validações; capturas de tela e redação deste "
                "relatório a partir do código e dos dados do repositório."),
         p("A equipe revisou o conteúdo e deve conseguir explicar cada parte do código na apresentação.", "small"),
 
@@ -368,6 +369,7 @@ def build() -> None:
           f"<link href='https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products' {LINK}>Copernicus EMSN194</link> · "
           f"<link href='https://www.openstreetmap.org/copyright' {LINK}>OpenStreetMap</link> · "
           f"<link href='https://registry.opendata.aws/terrain-tiles/' {LINK}>Mapzen Terrain Tiles</link> · "
+          f"<link href='https://openfreemap.org' {LINK}>OpenFreeMap</link> · <link href='https://maplibre.org' {LINK}>MapLibre GL</link> · "
           f"<link href='https://sace.sgb.gov.br/guaiba/' {LINK}>SACE/SGB</link>", "small"),
     ]
     doc.build(story)

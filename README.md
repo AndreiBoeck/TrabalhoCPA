@@ -47,7 +47,7 @@ Abra [http://127.0.0.1:8000](http://127.0.0.1:8000) (Tela 1) e [http://127.0.0.1
 **Componente de mapas, logo abaixo do nível atual, em três abas:**
 
 1. **Bairros:** os [limites oficiais da Prefeitura](https://prefeitura.poa.br/smpg/observapoa/mapas) coloridos pela porcentagem de prédios afetados na simulação do INCT, no nível do cenário. Abaixo de 3,0 m o INCT não indica prédios afetados. Clicar em um bairro leva o ponto do 3D para lá.
-2. **Água no ponto · 3D:** escolha um ponto da cidade no mini mapa. A tela mostra 1,2 km × 1,2 km em volta dele, com o mapa do OpenStreetMap sobre o relevo e a água no nível do cenário. Informa a profundidade no ponto e a partir de que nível da régua a água chega ali (`GET /api/water/point`).
+2. **Água no ponto · 3D:** mapa 3D ([MapLibre GL](https://maplibre.org), em `frontend/assets/vendor/maplibre/`, licença BSD-3) com o mapa base e os prédios do [OpenFreeMap](https://openfreemap.org) (dados OpenStreetMap) em altura real. A água do modelo aparece em blocos com a profundidade de cada célula de 20 m, em 2 km × 2 km em volta do ponto, de modo que os prédios ficam parcialmente submersos. Clique no mapa para escolher outro ponto; botões alternam entre 3D, vista de cima e rotação. Informa a profundidade no ponto e a partir de que nível da régua a água chega ali (`GET /api/water/point`).
 3. **Rotas a pé:** rede de ruas do centro (OpenStreetMap). A profundidade de cada trecho vem do mesmo modelo de água, no nível do cenário; a mancha observada em 06/05/2024 pode ser exibida para comparação (`POST /api/routing/plan` com `level_regua_m`).
 
 **Modelo de água por nível** (`scripts/preparar_modelo_agua.py` → `dados/processados/modelo_agua_poa.npz`). Grade de 20 m sobre Porto Alegre:

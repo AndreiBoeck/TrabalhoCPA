@@ -254,9 +254,10 @@ def forecast_model():
 
 
 @app.get("/api/water/point")
-def water_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180)):
-    """Chão e cota de entrada da água em 1,2 km × 1,2 km em volta do ponto."""
-    window = water.point_window(lat, lon)
+def water_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
+                half_cells: int = Query(default=30, ge=10, le=60)):
+    """Chão e cota de entrada da água em volta do ponto (2 × half_cells células de 20 m de lado)."""
+    window = water.point_window(lat, lon, half_cells)
     if window is None:
         raise HTTPException(422, "Ponto fora da área do modelo (Porto Alegre)")
     return {**window, "regua_offset_m": water.REGUA_OFFSET, "validation": water.validation()}

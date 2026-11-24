@@ -6,17 +6,19 @@
   <meta name="description" content="Tela 2: nível do Guaíba em tempo real, previsão e água por bairro, ponto e rua em Porto Alegre." />
   <title>O Guaíba agora | TrabalhoCPA</title>
   <link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css" />
-  <link rel="stylesheet" href="/assets/route.css" />
-  <link rel="stylesheet" href="/assets/ana.css" />
-  <link rel="stylesheet" href="/assets/tela2.css" />
+  <link rel="stylesheet" href="/assets/vendor/maplibre/maplibre-gl.css" />
+  <link rel="stylesheet" href="/assets/route.css?v=3" />
+  <link rel="stylesheet" href="/assets/ana.css?v=3" />
+  <link rel="stylesheet" href="/assets/tela2.css?v=3" />
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
-  <script defer src="/assets/scenario.js"></script>
-  <script defer src="/assets/live.js"></script>
-  <script defer src="/assets/maps.js"></script>
-  <script defer src="/assets/impact.js"></script>
-  <script defer src="/assets/point3d.js"></script>
-  <script defer src="/assets/route.js"></script>
-  <script defer src="/assets/ana.js"></script>
+  <script defer src="/assets/vendor/maplibre/maplibre-gl.js"></script>
+  <script defer src="/assets/scenario.js?v=3"></script>
+  <script defer src="/assets/live.js?v=3"></script>
+  <script defer src="/assets/maps.js?v=3"></script>
+  <script defer src="/assets/impact.js?v=3"></script>
+  <script defer src="/assets/point3d.js?v=4"></script>
+  <script defer src="/assets/route.js?v=3"></script>
+  <script defer src="/assets/ana.js?v=3"></script>
 </head>
 <body>
   <header class="topbar">
@@ -85,19 +87,21 @@
       <div id="pane-point" class="map-pane" role="tabpanel" hidden>
         <div class="pane-layout">
           <div class="point-view">
-            <canvas id="point-canvas" aria-label="Vista 3D do terreno em volta do ponto escolhido com a água no nível do cenário"></canvas>
-            <span id="point-status" class="canvas-status">Carregando terreno...</span>
+            <div id="point-map" role="application" aria-label="Mapa 3D com prédios e a água no nível do cenário; clique para escolher o ponto"></div>
+            <span id="point-status" class="canvas-status">Carregando mapa 3D...</span>
             <div class="point-controls">
-              <label>Girar <input id="point-angle" type="range" min="0" max="360" value="35" /></label>
-              <label>Exagero vertical <input id="point-exaggeration" type="range" min="1" max="8" step="0.5" value="3" /></label>
+              <button type="button" id="view-3d" class="active">3D</button>
+              <button type="button" id="view-top">De cima</button>
+              <button type="button" id="view-rotate">Girar 90°</button>
             </div>
           </div>
           <aside class="pane-side">
-            <p class="eyebrow">PONTO ESCOLHIDO · 1,2 KM × 1,2 KM</p>
-            <div id="point-picker" role="application" aria-label="Mapa para escolher o ponto da vista 3D"></div>
+            <p class="eyebrow">PONTO ESCOLHIDO · ÁGUA EM 2 KM × 2 KM</p>
+            <p class="point-help">Clique no mapa para escolher outro ponto. Arraste com o botão direito (ou Ctrl + arrastar) para girar e inclinar.</p>
             <div id="point-metrics" class="point-metrics">—</div>
-            <p class="caveat">Modelo simplificado: a água entra a partir do lago até a cota do nível escolhido, como se o sistema de proteção falhasse como em 2024. Não considera chuva local, bombas, correnteza nem obras recentes.</p>
-            <small id="point-sources">Terreno: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Terrain Tiles (AWS)</a> corrigido com a profundidade do <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a> e o nível da ANA em 06 e 08/05/2024. Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. <span id="point-validation"></span></small>
+            <div class="depth-legend"><span>Profundidade</span><i></i><div><span>0</span><span>1 m</span><span>2 m</span><span>3 m+</span></div></div>
+            <p class="caveat">Modelo simplificado: a água entra a partir do lago até a cota do nível escolhido, como se o sistema de proteção falhasse como em 2024. Não considera chuva local, bombas, correnteza nem obras recentes. A altura dos prédios vem do OpenStreetMap e pode faltar ou estar estimada.</p>
+            <small id="point-sources">Água: modelo do projeto sobre o relevo do <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Terrain Tiles (AWS)</a>, corrigido com a profundidade do <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a> e o nível da ANA em 06 e 08/05/2024. Mapa e prédios: <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>, dados <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>; biblioteca <a href="https://maplibre.org" target="_blank" rel="noopener noreferrer">MapLibre GL</a>. <span id="point-validation"></span></small>
           </aside>
         </div>
       </div>

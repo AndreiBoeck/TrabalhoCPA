@@ -41,16 +41,19 @@
 .pane-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .7fr); gap: 16px; }
 #impact-map, .point-view { height: 560px; border-radius: 14px; background: #dbe8e9; z-index: 0; }
 .point-view { position: relative; overflow: hidden; }
-#point-canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
-#point-canvas:active { cursor: grabbing; }
+#point-map { width: 100%; height: 100%; }
+.point-help { margin: 0; font-size: 12px; line-height: 1.4; color: #5a6d73; }
+.depth-legend { display: grid; gap: 4px; font-size: 11px; color: #536a70; }
+.depth-legend > span { font-weight: 700; }
+.depth-legend i { height: 10px; border-radius: 999px; background: linear-gradient(90deg, #9fd3ea 0 25%, #5aaed8 25% 50%, #2b7fbd 50% 75%, #17508f 75%); }
+.depth-legend div { display: flex; justify-content: space-between; }
 .canvas-status { position: absolute; left: 14px; top: 14px; padding: 7px 11px; border-radius: 9px; background: rgba(255, 255, 255, .9); color: #2d5260; font-size: 12px; font-weight: 700; }
-.point-controls { position: absolute; left: 14px; bottom: 14px; display: flex; gap: 14px; padding: 9px 12px; border-radius: 10px; background: rgba(255, 255, 255, .9); font-size: 11px; font-weight: 700; color: #355d66; }
-.point-controls label { display: grid; gap: 4px; }
-.point-controls input { width: 130px; accent-color: #176f7e; }
+.point-controls { position: absolute; left: 14px; bottom: 30px; display: flex; gap: 6px; padding: 6px; border-radius: 10px; background: rgba(255, 255, 255, .92); }
+.point-controls button { width: auto; margin: 0; padding: 7px 11px; font-size: 12px; }
+.point-controls button.active { background: #176f7e; color: #fff; }
 .pane-side { padding: 16px; border-radius: 14px; background: #f2f7f7; color: #254956; display: flex; flex-direction: column; gap: 12px; }
 .pane-side h3 { margin: 0; font-size: 19px; line-height: 1.25; }
 .pane-side small { margin-top: auto; line-height: 1.5; color: #5a6d73; font-size: 11px; }
-#point-picker { height: 190px; border-radius: 10px; z-index: 0; }
 .point-metrics { display: grid; gap: 6px; font-size: 13px; line-height: 1.4; }
 .point-metrics .point-name { font-size: 15px; }
 #impact-selected { min-height: 70px; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
@@ -90,5 +93,4 @@
   .pane-layout, .map-pane .workspace { grid-template-columns: 1fr; }
   #impact-map, .point-view, .map-pane #route-map { height: 420px; }
   .topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; }
-  .point-controls input { width: 90px; }
 }
