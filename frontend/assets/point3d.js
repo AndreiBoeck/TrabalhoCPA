@@ -72,7 +72,7 @@ function updatePointMetrics(depthHere, fraction) {
   const now = water == null ? "Sem nível escolhido." : depthHere > 0
     ? `No cenário de ${fmt(state.level)} m: <strong>${fmt(depthHere, 1)} m de água</strong> no ponto.`
     : `No cenário de ${fmt(state.level)} m: <strong>ponto seco</strong>.`;
-  document.getElementById("point-metrics").innerHTML = `<strong class="point-name">${state.point.label}</strong><span>${now}</span><span>${arrivalText}</span><span>Chão estimado: ${fmt(g, 1)} m acima do nível médio do mar · ${fmt(100 * fraction, 0)}% da área com água.</span>`;
+  document.getElementById("point-metrics").innerHTML = `<strong class="point-name">${state.point.label}</strong><span>${now}</span><span>${arrivalText}</span>`;
   document.getElementById("kpi-point").textContent = water == null ? "—" : depthHere > 0 ? `${fmt(depthHere, 1)} m` : "Seco";
   document.getElementById("kpi-point-label").textContent = state.point.label;
 }
@@ -90,7 +90,7 @@ async function loadPoint() {
     updateWater();
     const v = data.validation.validation.find((row) => row.date === "2024-05-04");
     const v10 = data.validation.validation.find((row) => row.date === "2024-05-10");
-    if (v && v10) document.getElementById("point-validation").textContent = `Validação contra a mancha observada pelo Copernicus: concordância (IoU) de ${fmt(v.iou * 100, 0)}% em 04/05 e ${fmt(v10.iou * 100, 0)}% em 10/05/2024; o modelo é mais preciso na subida do rio e subestima a água que ficou represada atrás dos diques.`;
+    if (v && v10) document.getElementById("point-validation").textContent = `Concordância com a mancha do Copernicus: ${fmt(v.iou * 100, 0)}% em 04/05 e ${fmt(v10.iou * 100, 0)}% em 10/05/2024.`;
   } catch (error) {
     if (serial === p3.request) { p3.data = null; updateWater(); document.getElementById("point-status").textContent = error.message; }
   }

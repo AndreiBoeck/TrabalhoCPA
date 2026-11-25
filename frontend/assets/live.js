@@ -117,7 +117,7 @@ function renderForecast(state) {
   if (points.length) {
     const p72 = points[points.length - 1];
     liveEl("forecast-badge").innerHTML = `Em 72 h: <strong>${fmt(p72.regua_m)} m</strong> <span>(${fmt(p72.low_regua_m)}–${fmt(p72.high_regua_m)})</span>`;
-    liveEl("forecast-note").innerHTML = `${forecast.method} Emitida a partir da leitura de ${fmtDateTime(forecast.issued_from)}. No teste com 12 meses que o modelo não viu, o erro médio em 72 h foi de ${fmt(p72.mae_m * 100, 0)} cm, contra ${fmt(p72.mae_persistence_m * 100, 0)} cm de simplesmente repetir o último nível. <strong>Modelo estatístico experimental</strong>: não usa chuva prevista, vento nem vazão dos rios e não substitui os <a href="https://sace.sgb.gov.br/guaiba/" target="_blank" rel="noopener noreferrer">boletins do SGB</a>. <a href="/api/forecast/model" target="_blank" rel="noopener noreferrer">Coeficientes e validação</a>.`;
+    liveEl("forecast-note").innerHTML = `Modelo estatístico experimental sobre a série da ANA (leitura de ${fmtDateTime(forecast.issued_from)}): erro médio de ${fmt(p72.mae_m * 100, 0)} cm em 72 h. Não usa chuva nem vento e não substitui os <a href="https://sace.sgb.gov.br/guaiba/" target="_blank" rel="noopener noreferrer">boletins do SGB</a>. <a href="/api/forecast/model" target="_blank" rel="noopener noreferrer">Detalhes</a>.`;
   } else {
     liveEl("forecast-badge").textContent = "Previsão indisponível";
     liveEl("forecast-note").textContent = "Sem série recente suficiente (20 dias com poucas lacunas) para calcular a previsão.";

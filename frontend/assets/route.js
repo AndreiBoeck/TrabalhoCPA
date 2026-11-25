@@ -125,7 +125,7 @@ async function calculate() {
     if (serial !== R.serial) return;
     clearRoute();
     R.serial = serial;
-    const levelText = `<small>Cenário: ${fmt(level)} m na régua · ${Scenario.state.label}</small>`;
+    const levelText = `<small>Cenário de ${fmt(level)} m</small>`;
     if (R.mode === "exit") pin(origin.lat, origin.lon, "#c0703f", Scenario.state.point.label);
     else { pin(R.a.lat, R.a.lon, "#197e99", "Origem A", "A"); pin(R.b.lat, R.b.lon, "#bb6c43", "Destino B", "B"); }
     if (result.status === "already_safe") {
@@ -147,7 +147,7 @@ async function calculate() {
         head = `${wet ? "Rota com menos água" : "Caminho seco"}: ${km(result.length_m)} (≈ ${result.walk_min} min)`;
         if (result.normal_route) detail = `Sem alagamento seriam ${km(result.normal_route.length_m)}${result.length_m - result.normal_route.length_m > 20 ? ` (desvio de ${km(result.length_m - result.normal_route.length_m)})` : ""}.`;
       }
-      setResult(`<strong>${head}</strong>${detail}<br>${water}<br>${levelText}${wet ? "<br><b>Estimativa de modelo: não indica passagem segura.</b>" : ""}`, wet ? "wet" : "ok");
+      setResult(`<strong>${head}</strong>${detail}<br>${water}<br>${levelText}`, wet ? "wet" : "ok");
       R.routeBounds = L.latLngBounds(result.coordinates).extend([origin.lat, origin.lon]);
       frame();
     }
@@ -161,8 +161,8 @@ function setMode(mode) {
   $("route-ab").hidden = mode !== "ab";
   $("route-examples").hidden = mode !== "exit";
   $("route-title").textContent = mode === "exit" ? "Saída até o ponto seco mais próximo" : "Rota entre dois pontos";
-  $("route-help").textContent = mode === "exit" ? "Clique no mapa para escolher de onde sair; o ponto vale para a tela toda (3D e indicadores)."
-    : "Clique na origem A e depois no destino B. Com a água do cenário, a rota evita as ruas alagadas.";
+  $("route-help").textContent = mode === "exit" ? "Clique no mapa para escolher de onde sair."
+    : "Clique na origem A e depois no destino B.";
   R.a = R.b = null;
   $("origin-label").textContent = "Clique no mapa";
   $("destination-label").textContent = "—";

@@ -13,11 +13,11 @@
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
   <script defer src="/assets/vendor/maplibre/maplibre-gl.js"></script>
   <script defer src="/assets/scenario.js?v=3"></script>
-  <script defer src="/assets/live.js?v=6"></script>
+  <script defer src="/assets/live.js?v=7"></script>
   <script defer src="/assets/maps.js?v=5"></script>
   <script defer src="/assets/impact.js?v=3"></script>
-  <script defer src="/assets/point3d.js?v=4"></script>
-  <script defer src="/assets/route.js?v=5"></script>
+  <script defer src="/assets/point3d.js?v=7"></script>
+  <script defer src="/assets/route.js?v=7"></script>
   <script defer src="/assets/ana.js?v=3"></script>
 </head>
 <body>
@@ -30,7 +30,7 @@
     <a href="/">← Simulação INCT</a>
   </header>
   <main>
-    <div class="heading"><div><p class="eyebrow">NÍVEL DO GUAÍBA · PORTO ALEGRE</p><h1>O Guaíba agora e o que ele alaga</h1><p>A tela acompanha a leitura mais recente da ANA. Escolha outro nível, ou um horário da previsão, e <strong>todos os mapas e números</strong> passam a mostrar esse cenário. O botão <strong>Voltar ao tempo real</strong> retoma a leitura atual.</p></div><span class="scenario">Tela 2 · fontes externas</span></div>
+    <div class="heading"><div><p class="eyebrow">NÍVEL DO GUAÍBA · PORTO ALEGRE</p><h1>O Guaíba agora e o que ele alaga</h1><p>Nível atual da ANA. Mude o nível ou escolha um horário da previsão e a tela toda acompanha.</p></div><span class="scenario">Tela 2 · fontes externas</span></div>
 
     <section class="now-grid" aria-label="Nível atual e cenário">
       <article class="current-level" id="current-card">
@@ -76,9 +76,9 @@
           <aside class="pane-side">
             <p class="eyebrow">SIMULAÇÃO INCT POR BAIRRO</p>
             <h3 id="impact-summary">Carregando bairros...</h3>
-            <p id="impact-selected">Clique em um bairro: ele mostra os valores e leva o ponto do 3D para lá.</p>
+            <p id="impact-selected">Clique em um bairro para ver os números.</p>
             <div class="impact-legend"><span>0%</span><i></i><span>100%</span></div>
-            <p class="caveat">A cor resume a porcentagem de prédios afetados no bairro inteiro, segundo o INCT; não indica quais ruas ficam alagadas. Para ver o terreno, use a aba 3D.</p>
+            <p class="caveat">A cor é a % de prédios afetados no bairro (INCT), não as ruas alagadas.</p>
             <small>Percentuais: <a href="/api/metadata" target="_blank" rel="noopener noreferrer">JSON INCT fornecido ao projeto</a> (data de recebimento não documentada). Limites: <a href="https://prefeitura.poa.br/smpg/observapoa/mapas" target="_blank" rel="noopener noreferrer">Prefeitura de Porto Alegre</a>, coleta <time id="impact-collected">—</time>.</small>
           </aside>
         </div>
@@ -97,10 +97,10 @@
           </div>
           <aside class="pane-side">
             <p class="eyebrow">PONTO ESCOLHIDO · ÁGUA EM 2 KM × 2 KM</p>
-            <p class="point-help">Clique no mapa para escolher outro ponto. Arraste com o botão direito (ou Ctrl + arrastar) para girar e inclinar.</p>
+            <p class="point-help">Clique para mudar o ponto. Botão direito gira e inclina.</p>
             <div id="point-metrics" class="point-metrics">—</div>
             <div class="depth-legend"><span>Profundidade</span><i></i><div><span>0</span><span>1 m</span><span>2 m</span><span>3 m+</span></div></div>
-            <p class="caveat">Modelo simplificado: a água entra a partir do lago até a cota do nível escolhido, como se o sistema de proteção falhasse como em 2024. Não considera chuva local, bombas, correnteza nem obras recentes. A altura dos prédios vem do OpenStreetMap e pode faltar ou estar estimada.</p>
+            <p class="caveat">Modelo simplificado: a água entra pelo lago, como em 2024. Não considera chuva, bombas nem correnteza.</p>
             <small id="point-sources">Água: modelo do projeto sobre o relevo do <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Terrain Tiles (AWS)</a>, corrigido com a profundidade do <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a> e o nível da ANA em 06 e 08/05/2024. Mapa e prédios: <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>, dados <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>; biblioteca <a href="https://maplibre.org" target="_blank" rel="noopener noreferrer">MapLibre GL</a>. <span id="point-validation"></span></small>
           </aside>
         </div>
@@ -128,7 +128,7 @@
           <aside class="pane-side">
             <p class="eyebrow">ROTA A PÉ · ÁREA QUE ALAGOU EM 2024</p>
             <h3 id="route-title">Saída até o ponto seco mais próximo</h3>
-            <p class="point-help" id="route-help">Clique no mapa para escolher de onde sair; o ponto vale para a tela toda (3D e indicadores).</p>
+            <p class="point-help" id="route-help">Clique no mapa para escolher de onde sair.</p>
             <div id="route-result" class="route-result" role="status" aria-live="polite">Carregando ruas...</div>
             <div class="route-examples" id="route-examples">
               <span>Experimente:</span>
@@ -142,7 +142,7 @@
               <button id="clear-route" type="button" class="link-button">Escolher outros pontos</button>
             </div>
             <label class="toggle"><input id="show-observed" type="checkbox" /> Comparar com a mancha observada em 06/05/2024</label>
-            <p class="caveat">Estimativa do modelo de água: não considera correnteza, bloqueios, bueiros ou obras. O ponto seco é o mais perto em que o rio precisaria subir pelo menos mais 1 m para chegar. Não indica passagem segura: em emergência, siga a Defesa Civil (199).</p>
+            <p class="caveat">Estimativa do modelo: não indica passagem segura. Em emergência, Defesa Civil 199.</p>
             <small id="collection-date">Ruas: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. Mancha de 2024: <a href="https://riskandrecovery.emergency.copernicus.eu/EMSN194/?section=products" target="_blank" rel="noopener noreferrer">Copernicus EMSN194</a>.</small>
           </aside>
         </div>
@@ -150,23 +150,23 @@
     </section>
 
     <section class="forecast-card" aria-labelledby="forecast-title">
-      <div class="section-head"><div><p class="eyebrow">ÚLTIMOS 7 DIAS E PRÓXIMAS 72 H</p><h2 id="forecast-title">Previsão do nível</h2><p>Clique em um ponto da previsão para usar aquele horário como cenário em toda a tela.</p></div><div id="forecast-badge" class="forecast-badge">—</div></div>
+      <div class="section-head"><div><p class="eyebrow">ÚLTIMOS 7 DIAS E PRÓXIMAS 72 H</p><h2 id="forecast-title">Previsão do nível</h2><p>Clique num ponto da previsão para usá-lo como cenário.</p></div><div id="forecast-badge" class="forecast-badge">—</div></div>
       <svg id="forecast-chart" viewBox="0 0 900 280" role="img" aria-label="Nível observado nos últimos 7 dias e previsão para 72 horas"></svg>
       <div class="forecast-legend"><span><i class="obs"></i>Observado (ANA)</span><span><i class="fc"></i>Previsão</span><span><i class="band"></i>Faixa provável (80% dos erros no teste)</span><span><i class="sel"></i>Cenário em uso</span></div>
       <p id="forecast-note" class="forecast-note">—</p>
     </section>
 
     <section class="observation-section" aria-labelledby="observations-title">
-      <div class="section-head"><div><p class="eyebrow">ENCHENTE DE 2024 · MEDIÇÕES ANA/SGB</p><h2 id="observations-title">Como o Guaíba se comportou em maio e junho de 2024</h2><p>Estação 87450020 · referencial corrigido ao nível médio do mar · a linha tracejada mostra o cenário em uso</p></div><div class="date-filter"><label>De <input id="date-start" type="date" /></label><label>Até <input id="date-end" type="date" /></label></div></div>
+      <div class="section-head"><div><p class="eyebrow">ENCHENTE DE 2024 · MEDIÇÕES ANA/SGB</p><h2 id="observations-title">Como o Guaíba se comportou em maio e junho de 2024</h2><p>Estação 87450020 · tracejado = cenário em uso</p></div><div class="date-filter"><label>De <input id="date-start" type="date" /></label><label>Até <input id="date-end" type="date" /></label></div></div>
       <div class="ana-metrics"><div><span>Máximo no período</span><strong id="ana-peak">—</strong><small id="ana-peak-date">—</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div><div><span>Medições disponíveis</span><strong id="ana-available">—</strong><small id="ana-coverage">—</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div><div><span>Período mostrado</span><strong id="ana-days">—</strong><small>dias selecionados</small><small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></div></div>
-      <div class="record-card"><div><p class="eyebrow">MAIOR NÍVEL REGISTRADO · 05/05/2024</p><strong>5,35 m</strong><span>régua emergencial · Cais Mauá</span></div><div><span>O mesmo pico corresponde a</span><strong>4,17 m</strong><span>estação 87450020 · referencial corrigido ao nível médio do mar</span></div><p>A diferença de 1,18 m entre os dois referenciais é usada nesta tela para converter as leituras da ANA para a régua, a mesma escala da Tela 1. <a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">Explicação ANA/SGB</a> · consulta em 09/11/2026.</p></div>
+      <div class="record-card"><div><p class="eyebrow">MAIOR NÍVEL REGISTRADO · 05/05/2024</p><strong>5,35 m</strong><span>régua emergencial · Cais Mauá</span></div><div><span>O mesmo pico corresponde a</span><strong>4,17 m</strong><span>estação 87450020 (nível médio do mar)</span></div><p>A diferença de 1,18 m converte a ANA para a régua da Tela 1. <a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">Explicação ANA/SGB</a> · consulta em 09/11/2026.</p></div>
       <div class="ana-charts">
-        <article class="ana-chart ana-main"><h3>Nível observado</h3><p>Leituras ao longo do período; lacunas permanecem vazias.</p><svg id="ana-series" viewBox="0 0 720 250" role="img" aria-label="Série temporal do nível observado"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
-        <article class="ana-chart"><h3>Faixa diária</h3><p>Menor e maior nível com medição em cada dia.</p><svg id="ana-range" viewBox="0 0 520 230" role="img" aria-label="Faixa diária de níveis mínimo e máximo"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
-        <article class="ana-chart"><h3>Completude diária</h3><p>Percentual de horários com medição de nível.</p><svg id="ana-completeness" viewBox="0 0 520 230" role="img" aria-label="Completude diária das medições"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
+        <article class="ana-chart ana-main"><h3>Nível observado</h3><p>Lacunas ficam em branco.</p><svg id="ana-series" viewBox="0 0 720 250" role="img" aria-label="Série temporal do nível observado"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
+        <article class="ana-chart"><h3>Faixa diária</h3><p>Mínimo e máximo de cada dia.</p><svg id="ana-range" viewBox="0 0 520 230" role="img" aria-label="Faixa diária de níveis mínimo e máximo"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
+        <article class="ana-chart"><h3>Completude diária</h3><p>% de horários com medição.</p><svg id="ana-completeness" viewBox="0 0 520 230" role="img" aria-label="Completude diária das medições"></svg><small class="chart-source">ANA/SGB · estação 87450020 · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">fonte</a> · coleta <time class="ana-collected">—</time></small></article>
       </div>
       <p class="ana-note" id="ana-note">Carregando série histórica...</p>
-      <div class="relation"><div><p class="eyebrow">LIGAÇÃO COM A TELA 1</p><h3>Cenário em uso, simulação e enchente de 2024</h3><p id="relation-text">O nível do cenário, convertido para a régua, é o mesmo eixo usado pela simulação do INCT na Tela 1. A comparação com 2024 mostra o pico observado no mesmo eixo.</p></div><div class="relation-values"><div><small>CENÁRIO EM USO</small><strong id="relation-level">—</strong><span id="relation-impact">simulação INCT</span></div><div><small>RECORDE OBSERVADO · 2024</small><strong>5,35 m</strong><span id="relation-record">régua · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">ANA</a> · INCT entre 5,3 e 5,4 m: <b id="inct-event-impact">—</b> pessoas</span></div></div></div>
+      <div class="relation"><div><p class="eyebrow">LIGAÇÃO COM A TELA 1</p><h3>Cenário em uso, simulação e enchente de 2024</h3><p id="relation-text">Cenário, simulação do INCT e pico de 2024 na mesma régua da Tela 1.</p></div><div class="relation-values"><div><small>CENÁRIO EM USO</small><strong id="relation-level">—</strong><span id="relation-impact">simulação INCT</span></div><div><small>RECORDE OBSERVADO · 2024</small><strong>5,35 m</strong><span id="relation-record">régua · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx?WSDL" target="_blank" rel="noopener noreferrer">ANA</a> · INCT entre 5,3 e 5,4 m: <b id="inct-event-impact">—</b> pessoas</span></div></div></div>
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
