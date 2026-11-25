@@ -13,7 +13,7 @@
   <script defer src="/assets/vendor/leaflet/leaflet.js"></script>
   <script defer src="/assets/vendor/maplibre/maplibre-gl.js"></script>
   <script defer src="/assets/scenario.js?v=3"></script>
-  <script defer src="/assets/live.js?v=7"></script>
+  <script defer src="/assets/live.js?v=8"></script>
   <script defer src="/assets/maps.js?v=5"></script>
   <script defer src="/assets/impact.js?v=3"></script>
   <script defer src="/assets/point3d.js?v=7"></script>
@@ -34,12 +34,11 @@
 
     <section class="now-grid" aria-label="Nível atual e cenário">
       <article class="current-level" id="current-card">
-        <p class="eyebrow">LEITURA ATUAL · ANA 87450020</p>
+        <p class="eyebrow">NÍVEL AGORA</p>
         <strong id="current-level-value">Consultando...</strong>
-        <span id="current-level-msl">—</span>
-        <span id="current-level-time">Estação 87450020 · Usina do Gasômetro</span>
-        <p id="current-level-status">Consultando a ANA.</p>
-        <small>ANA/SGB · <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos" target="_blank" rel="noopener noreferrer">fonte</a> · consulta <time id="current-level-query">—</time> · régua = referencial corrigido + 1,18 m (<a href="https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs" target="_blank" rel="noopener noreferrer">ANA/SGB</a>)</small>
+        <span id="current-level-time">Consultando a ANA...</span>
+        <p id="current-level-status" hidden></p>
+        <small>Fonte: <a href="https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos" target="_blank" rel="noopener noreferrer">ANA</a> · consulta <time id="current-level-query">—</time></small>
       </article>
       <article class="scenario-card" id="scenario-card">
         <div class="scenario-top"><div><p class="eyebrow">CENÁRIO EM USO EM TODA A TELA</p><strong id="scenario-level">—</strong><span id="scenario-label">Aguardando leitura</span></div></div>

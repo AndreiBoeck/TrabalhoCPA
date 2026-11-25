@@ -15,23 +15,22 @@ refreshLive();
 setInterval(refreshLive, 300000);
 
 function renderCurrent(live) {
-  const card = liveEl("current-card");
+  const card = liveEl("current-card"), status = liveEl("current-level-status");
   if (!live) return;
   card.classList.toggle("stale", live.status !== "recent");
-  liveEl("current-level-query").textContent = live.queried_at ? new Date(live.queried_at).toLocaleString("pt-BR") : "—";
+  liveEl("current-level-query").textContent = live.queried_at
+    ? new Date(live.queried_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
   if (live.status === "unavailable") {
-    liveEl("current-level-value").textContent = "Sem dado recente";
-    liveEl("current-level-msl").textContent = "—";
-    liveEl("current-level-status").textContent = "Não foi possível obter leitura da ANA agora.";
+    liveEl("current-level-value").textContent = "Sem dado";
+    liveEl("current-level-time").textContent = "A ANA não respondeu agora.";
+    status.hidden = true;
     return;
   }
   liveEl("current-level-value").textContent = `${fmt(live.level_regua_m)} m`;
-  liveEl("current-level-msl").textContent = `régua do Cais Mauá · ${fmt(live.level_m)} m no referencial corrigido da ANA`;
-  liveEl("current-level-time").textContent = `Medição ${live.measurement_at.replace("T", " ").slice(0, 16)} · estação ${live.station_code} · ${live.station_name}`;
-  liveEl("current-level-status").textContent = live.source_error
-    ? "O serviço da ANA não respondeu agora; mostrando a última leitura obtida. Nova tentativa em 5 min."
-    : live.status === "recent" ? "Leitura recente (até 2 h). Atualiza a cada 5 min."
-    : "Leitura com mais de 2 h: pode não representar o nível atual.";
+  liveEl("current-level-time").textContent = `Régua do Cais Mauá · medido às ${live.measurement_at.slice(11, 16)} de ${live.measurement_at.slice(8, 10)}/${live.measurement_at.slice(5, 7)}`;
+  // Só fala algo quando a leitura não está boa.
+  status.hidden = live.status === "recent" && !live.source_error;
+  status.textContent = live.source_error ? "ANA fora do ar: última leitura obtida." : "Leitura com mais de 2 h.";
 }
 
 function renderScenario(state) {
